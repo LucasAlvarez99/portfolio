@@ -30,9 +30,14 @@
                 <li><a href="#about">Sobre mí</a></li>
                 <li><a href="#contact">Contacto</a></li>
             </ul>
-            <button class="theme-toggle" id="themeToggle">
-                <i class="fas fa-sun"></i>
-            </button>
+            <div class="nav-actions">
+                <a href="login.html" class="admin-link" title="Panel Admin">
+                    <i class="fas fa-cog"></i>
+                </a>
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-sun"></i>
+                </button>
+            </div>
         </nav>
     </header>
 
@@ -49,107 +54,74 @@
     <!-- Proyectos Section -->
     <section id="projects">
         <h2 class="section-title slide-up">Proyectos</h2>
-        <div class="projects-grid">
-            <!-- Proyecto 1 -->
-            <div class="project-card zoom-in">
-                <div class="project-image">
-                    <img src="https://via.placeholder.com/400x200/0ea5e9/ffffff?text=E-Commerce+App" alt="E-Commerce App Preview" />
-                    <div class="project-overlay">
-                        <div class="overlay-content">
-                            <h4>Vista Previa</h4>
-                            <p>App de comercio electrónico</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-content">
-                    <h3 class="project-title">E-Commerce App</h3>
-                    <p class="project-description">
-                        Aplicación de comercio electrónico completa con carrito de compras, 
-                        sistema de pagos y panel de administración.
-                    </p>
-                    <div class="project-tech">
-                        <span class="tech-tag">React</span>
-                        <span class="tech-tag">Node.js</span>
-                        <span class="tech-tag">MongoDB</span>
-                    </div>
-                    <div class="project-buttons">
-                        <a href="#" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> Ver Proyecto
-                        </a>
-                        <a href="#" class="btn btn-secondary">
-                            <i class="fab fa-github"></i> Ver Código
-                        </a>
-                    </div>
-                </div>
-            </div>
+        <div class="projects-grid" id="projectsGrid">
+            <!-- Los proyectos se cargarán dinámicamente desde localStorage -->
+        </div>
+    </section>
 
-            <!-- Proyecto 2 -->
-            <div class="project-card zoom-in">
-                <div class="project-image">
-                    <img src="https://via.placeholder.com/400x200/22d3ee/ffffff?text=Task+Manager" alt="Task Manager Preview" />
-                    <div class="project-overlay">
-                        <div class="overlay-content">
-                            <h4>Vista Previa</h4>
-                            <p>Gestor de tareas colaborativo</p>
-                        </div>
-                    </div>
-                </div>
-                <div class="project-content">
-                    <h3 class="project-title">Task Manager</h3>
-                    <p class="project-description">
-                        Gestor de tareas colaborativo con funciones de equipo, 
-                        calendario integrado y notificaciones en tiempo real.
-                    </p>
-                    <div class="project-tech">
-                        <span class="tech-tag">Vue.js</span>
-                        <span class="tech-tag">Firebase</span>
-                        <span class="tech-tag">Tailwind</span>
-                    </div>
-                    <div class="project-buttons">
-                        <a href="#" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> Ver Proyecto
-                        </a>
-                        <a href="#" class="btn btn-secondary">
-                            <i class="fab fa-github"></i> Ver Código
-                        </a>
-                    </div>
-                </div>
+    <!-- Modal para vista previa de proyectos -->
+    <div id="projectModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Vista Previa del Proyecto</h3>
+                <button class="modal-close" id="modalClose">
+                    <i class="fas fa-times"></i>
+                </button>
             </div>
-
-            <!-- Proyecto 3 -->
-            <div class="project-card zoom-in">
-                <div class="project-image">
-                    <img src="https://via.placeholder.com/400x200/06b6d4/ffffff?text=Dashboard+Analytics" alt="Dashboard Analytics Preview" />
-                    <div class="project-overlay">
-                        <div class="overlay-content">
-                            <h4>Vista Previa</h4>
-                            <p>Dashboard de análisis</p>
+            <div class="modal-body">
+                <div class="project-preview">
+                    <div class="preview-header">
+                        <div class="preview-controls">
+                            <span class="control control-close"></span>
+                            <span class="control control-minimize"></span>
+                            <span class="control control-maximize"></span>
+                        </div>
+                        <div class="preview-url" id="previewUrl">
+                            <i class="fas fa-lock"></i>
+                            <span>preview.vercel.app</span>
+                        </div>
+                        <div class="preview-actions">
+                            <button class="preview-btn" onclick="openFullPreview()">
+                                <i class="fas fa-external-link-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="preview-content">
+                        <iframe id="previewFrame" src="" frameborder="0"></iframe>
+                        <div class="preview-loading" id="previewLoading">
+                            <i class="fas fa-spinner fa-spin"></i>
+                            <p>Cargando vista previa...</p>
                         </div>
                     </div>
                 </div>
-                <div class="project-content">
-                    <h3 class="project-title">Dashboard Analytics</h3>
-                    <p class="project-description">
-                        Dashboard interactivo para análisis de datos con gráficos 
-                        dinámicos y reportes automatizados.
-                    </p>
-                    <div class="project-tech">
-                        <span class="tech-tag">React</span>
-                        <span class="tech-tag">D3.js</span>
-                        <span class="tech-tag">Express</span>
+                <div class="project-details">
+                    <div class="project-info">
+                        <h4 id="modalProjectTitle"></h4>
+                        <p id="modalProjectDescription"></p>
+                        <div class="project-tech" id="modalProjectTech"></div>
+                        <div class="project-stats">
+                            <div class="stat">
+                                <i class="fas fa-eye"></i>
+                                <span>1.2k views</span>
+                            </div>
+                            <div class="stat">
+                                <i class="fas fa-star"></i>
+                                <span>4.8 rating</span>
+                            </div>
+                        </div>
                     </div>
-                    <div class="project-buttons">
-                        <a href="#" class="btn btn-primary">
-                            <i class="fas fa-eye"></i> Ver Proyecto
+                    <div class="project-actions">
+                        <a href="#" id="modalProjectLink" class="btn btn-primary" target="_blank">
+                            <i class="fas fa-external-link-alt"></i> Ver Sitio Web
                         </a>
-                        <a href="#" class="btn btn-secondary">
+                        <a href="#" id="modalGithubLink" class="btn btn-secondary" target="_blank">
                             <i class="fab fa-github"></i> Ver Código
                         </a>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
+    </div>
 
     <!-- Habilidades Section -->
     <section id="skills">
@@ -224,10 +196,9 @@
                 </div>
                 <div class="skill-name">Java</div>
                 <div class="skill-level">
-                    <div class="level-bar" data-level="35"></div>
+                    <div class="level-bar" data-level="65"></div>
                 </div>
             </div>
-            
         </div>
     </section>
 
@@ -241,7 +212,7 @@
             <div class="about-text fade-in">
                 <p>
                     ¡Hola! Soy Lucas Alvarez, un desarrollador web apasionado por crear 
-                    experiencias digitales excepcionales. Con más de 2 años de experiencia 
+                    experiencias digitales excepcionales. Con más de 3 años de experiencia 
                     en el desarrollo frontend y backend, me especializo en construir 
                     aplicaciones web modernas y funcionales.
                 </p>
@@ -252,17 +223,17 @@
                     del desarrollo web.
                 </p>
                 <p>
-                    Cuando no estoy programando, disfruto de la musica, los videojuegos 
+                    Cuando no estoy programando, disfruto de la fotografía, los videojuegos 
                     y explorar nuevos lugares. Siempre estoy abierto a nuevos desafíos 
                     y oportunidades de colaboración.
                 </p>
                 <div class="about-stats">
                     <div class="stat-item">
-                        <h3>15+</h3>
+                        <h3 id="projectCount">15</h3>
                         <p>Proyectos Completados</p>
                     </div>
                     <div class="stat-item">
-                        <h3>2+</h3>
+                        <h3>3+</h3>
                         <p>Años de Experiencia</p>
                     </div>
                     <div class="stat-item">
@@ -305,13 +276,13 @@
                     <i class="fas fa-envelope"></i>
                     <span>lucas.alvarez.bernardez.99@gmail.com</span>
                 </a>
-                <a href="tel:+5491125925851" class="contact-item">
+                <a href="tel:+5491234567890" class="contact-item">
                     <i class="fas fa-phone"></i>
-                    <span>+54 9 11 2592 5851</span>
+                    <span>+54 9 123 456 7890</span>
                 </a>
                 <div class="contact-item">
                     <i class="fas fa-map-marker-alt"></i>
-                    <span>Buenos Aires, Capital Federal, Argentina</span>
+                    <span>Buenos Aires, Argentina</span>
                 </div>
 
                 <div class="social-links">

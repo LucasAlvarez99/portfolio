@@ -190,6 +190,24 @@ nav {
     width: 100%;
 }
 
+.nav-actions {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.admin-link {
+    color: var(--text-secondary);
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    text-decoration: none;
+}
+
+.admin-link:hover {
+    color: var(--accent-primary);
+    transform: scale(1.1);
+}
+
 .theme-toggle {
     background: none;
     border: 2px solid var(--accent-primary);
@@ -363,6 +381,7 @@ section {
     transition: all 0.3s ease;
     border: 1px solid var(--border-color);
     position: relative;
+    cursor: pointer;
 }
 
 .project-card:hover {
@@ -493,6 +512,247 @@ section {
 .btn-secondary:hover {
     background: var(--accent-primary);
     color: white;
+}
+
+/* ===============================
+   MODAL PARA PROYECTOS (ESTILO VERCEL)
+=============================== */
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.modal.show {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-content {
+    background: var(--bg-card);
+    border-radius: 20px;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 90vh;
+    overflow: hidden;
+    box-shadow: var(--shadow-hover);
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9) translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.modal-header h3 {
+    color: var(--text-primary);
+    margin: 0;
+}
+
+.modal-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.modal-close:hover {
+    color: var(--accent-primary);
+}
+
+.modal-body {
+    padding: 0;
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    height: 600px;
+}
+
+.project-preview {
+    background: #f5f5f5;
+    position: relative;
+    overflow: hidden;
+}
+
+[data-theme="dark"] .project-preview {
+    background: #1a1a1a;
+}
+
+.preview-header {
+    background: #e5e5e5;
+    padding: 0.75rem 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #d0d0d0;
+}
+
+[data-theme="dark"] .preview-header {
+    background: #2a2a2a;
+    border-bottom: 1px solid #404040;
+}
+
+.preview-controls {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.control {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+}
+
+.control-close {
+    background: #ff5f56;
+}
+
+.control-minimize {
+    background: #ffbd2e;
+}
+
+.control-maximize {
+    background: #27ca3f;
+}
+
+.preview-url {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: white;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    color: var(--text-secondary);
+    border: 1px solid #d0d0d0;
+}
+
+[data-theme="dark"] .preview-url {
+    background: #333;
+    border-color: #555;
+}
+
+.preview-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.preview-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 5px;
+    transition: all 0.3s ease;
+}
+
+.preview-btn:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: var(--accent-primary);
+}
+
+.preview-content {
+    position: relative;
+    height: calc(100% - 50px);
+}
+
+.preview-content iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+.preview-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-primary);
+    color: var(--text-secondary);
+}
+
+.preview-loading i {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--accent-primary);
+}
+
+.project-details {
+    padding: 2rem;
+    overflow-y: auto;
+}
+
+.project-info h4 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+}
+
+.project-info p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    margin-bottom: 1.5rem;
+}
+
+.project-stats {
+    display: flex;
+    gap: 1.5rem;
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: var(--bg-secondary);
+    border-radius: 10px;
+}
+
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.stat i {
+    color: var(--accent-primary);
+}
+
+.project-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: 2rem;
+}
+
+.project-actions .btn {
+    justify-content: center;
+    width: 100%;
 }
 
 /* ===============================
@@ -762,11 +1022,56 @@ section {
 }
 
 /* ===============================
+   NOTIFICACIONES
+=============================== */
+.notification {
+    position: fixed;
+    top: 100px;
+    right: 20px;
+    padding: 1rem 1.5rem;
+    border-radius: 10px;
+    color: white;
+    font-weight: 500;
+    z-index: 10000;
+    opacity: 0;
+    transform: translateX(100%);
+    transition: all 0.3s ease;
+    box-shadow: var(--shadow-hover);
+}
+
+.notification.success {
+    background: #10b981;
+}
+
+.notification.error {
+    background: #ef4444;
+}
+
+.notification.info {
+    background: #3b82f6;
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.notification-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* ===============================
    RESPONSIVE DESIGN
 =============================== */
 @media (max-width: 768px) {
     .nav-links {
         display: none;
+    }
+
+    .nav-actions {
+        gap: 0.5rem;
     }
 
     .hero-content h1 {
@@ -814,6 +1119,29 @@ section {
     .project-buttons {
         flex-direction: column;
     }
+
+    /* Modal responsive */
+    .modal-content {
+        width: 95%;
+        height: 90vh;
+    }
+
+    .modal-body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 1fr 1fr;
+    }
+
+    .project-details {
+        padding: 1rem;
+    }
+
+    .preview-header {
+        padding: 0.5rem;
+    }
+
+    .preview-url {
+        display: none;
+    }
 }
 
 @media (max-width: 480px) {
@@ -840,4 +1168,58 @@ section {
     .section-title {
         font-size: 1.8rem;
     }
+
+    .admin-link {
+        display: none;
+    }
+
+    .modal-content {
+        width: 100%;
+        height: 100vh;
+        border-radius: 0;
+    }
+}
+
+/* ===============================
+   ANIMACIONES ADICIONALES
+=============================== */
+@keyframes ripple {
+    to {
+        transform: scale(4);
+        opacity: 0;
+    }
+}
+
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple-effect {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.6);
+    transform: scale(0);
+    animation: ripple 0.6s linear;
+    pointer-events: none;
+}
+
+/* ===============================
+   SCROLL PERSONALIZADO
+=============================== */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--accent-primary);
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-secondary);
 }

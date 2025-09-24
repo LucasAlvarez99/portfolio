@@ -21,6 +21,191 @@ let currentPhraseIndex = 0;
 let currentCharIndex = 0;
 let isDeleting = false;
 let typingSpeed = typingConfig.typingSpeed;
+let projects = [];
+
+// ===============================
+// GESTIÓN DE PROYECTOS
+// ===============================
+function loadProjects() {
+    const savedProjects = localStorage.getItem('portfolioProjects');
+    if (savedProjects) {
+        projects = JSON.parse(savedProjects);
+    } else {
+        // Proyectos por defecto
+        projects = [
+            {
+                id: 1,
+                title: "E-Commerce App",
+                description: "Aplicación de comercio electrónico completa con carrito de compras, sistema de pagos y panel de administración.",
+                image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop",
+                link: "https://ecommerce-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/ecommerce-app",
+                technologies: ["React", "Node.js", "MongoDB", "Stripe"]
+            },
+            {
+                id: 2,
+                title: "Task Manager",
+                description: "Gestor de tareas colaborativo con funciones de equipo, calendario integrado y notificaciones en tiempo real.",
+                image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=200&fit=crop",
+                link: "https://taskmanager-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/task-manager",
+                technologies: ["Vue.js", "Firebase", "Tailwind"]
+            },
+            {
+                id: 3,
+                title: "Dashboard Analytics",
+                description: "Dashboard interactivo para análisis de datos con gráficos dinámicos y reportes automatizados.",
+                image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
+                link: "https://dashboard-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/dashboard-analytics",
+                technologies: ["React", "D3.js", "Express", "PostgreSQL"]
+            }
+        ];
+    }
+    renderProjects();
+    updateProjectCount();
+}
+
+function renderProjects() {
+    const container = document.getElementById('projectsGrid');
+    if (!container) return;
+
+    container.innerHTML = projects.map(project => `
+        <div class="project-card zoom-in" onclick="openProjectModal(${project.id})">
+            <div class="project-image">
+                <img src="${project.image}" alt="${project.title} Preview" />
+                <div class="project-overlay">
+                    <div class="overlay-content">
+                        <h4>Vista Previa</h4>
+                        <p>Haz clic para ver más detalles</p>
+                    </div>
+                </div>
+            </div>
+            <div class="project-content">
+                <h3 class="project-title">${project.title}</h3>
+                <p class="project-description">${project.description}</p>
+                <div class="project-tech">
+                    ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                </div>
+                <div class="project-buttons">
+                    <a href="${project.link}" class="btn btn-primary" target="_blank" onclick="event.stopPropagation()">
+                        <i class="fas fa-eye"></i> Ver Proyecto
+                    </a>
+                    <a href="${project.github}" class="btn btn-secondary" target="_blank" onclick="event.stopPropagation()">
+                        <i class="fab fa-github"></i> Ver Código
+                    </a>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function updateProjectCount() {
+    const countElement = document.getElementById('projectCount');
+    if (countElement) {
+        countElement.textContent = projects.length;
+    }
+}
+
+// ===============================
+// MODAL DE PROYECTOS (ESTILO VERCEL)
+// ===============================
+function openProjectModal(projectId) {
+    const project = projects.find(p => p.id === projectId);
+    if (!project) return;
+
+    const modal = document.getElementById('projectModal');
+    const modalTitle = document.getElementById('modalTitle');
+    const modalProjectTitle = document.getElementById('modalProjectTitle');
+    const modalProjectDescription = document.getElementById('modalProjectDescription');
+    const modalProjectTech = document.getElementById('modalProjectTech');
+    const modalProjectLink = document.getElementById('modalProjectLink');
+    const modalGithubLink = document.getElementById('modalGithubLink');
+    const previewFrame = document.getElementById('previewFrame');
+    const previewLoading = document.getElementById('previewLoading');
+    const previewUrl = document.getElementById('previewUrl');
+
+    // Verificar que todos los elementos existen
+    if (!modal || !modalTitle || !modalProjectTitle || !modalProjectDescription || 
+        !modalProjectTech || !modalProjectLink || !modalGithubLink || 
+        !previewFrame || !previewLoading || !previewUrl) {
+        console.error('Elementos del modal no encontrados');
+        return;
+    }
+
+    // Llenar modal con datos del proyecto
+    modalTitle.textContent = `${project.title} - Vista Previa`;
+    modalProjectTitle.textContent = project.title;
+    modalProjectDescription.textContent = project.description;
+    modalProjectTech.innerHTML = project.technologies.map(tech => 
+        `<span class="tech-tag">${tech}</span>`
+    ).join('');
+    modalProjectLink.href = project.link;
+    modalGithubLink.href = project.github;
+    
+    // Configurar URL preview
+    try {
+        const domain = new URL(project.link).hostname;
+        const urlSpan = previewUrl.querySelector('span');
+        if (urlSpan) {
+            urlSpan.textContent = domain;
+        }
+    } catch (e) {
+        console.error('Error al parsear URL:', e);
+        const urlSpan = previewUrl.querySelector('span');
+        if (urlSpan) {
+            urlSpan.textContent = 'preview.demo.com';
+        }
+    }
+
+    // Mostrar loading
+    previewLoading.style.display = 'flex';
+    previewFrame.style.display = 'none';
+
+    // Cargar iframe
+    previewFrame.src = project.link;
+    previewFrame.onload = () => {
+        setTimeout(() => {
+            previewLoading.style.display = 'none';
+            previewFrame.style.display = 'block';
+        }, 1000);
+    };
+
+    // Manejar error de carga del iframe
+    previewFrame.onerror = () => {
+        previewLoading.innerHTML = `
+            <i class="fas fa-exclamation-triangle"></i>
+            <p>No se pudo cargar la vista previa</p>
+            <small>Haz clic en "Ver Sitio Web" para abrir el proyecto</small>
+        `;
+    };
+
+    // Mostrar modal
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeProjectModal() {
+    const modal = document.getElementById('projectModal');
+    const previewFrame = document.getElementById('previewFrame');
+    
+    if (!modal || !previewFrame) return;
+    
+    modal.classList.remove('show');
+    document.body.style.overflow = 'auto';
+    
+    // Limpiar iframe
+    setTimeout(() => {
+        previewFrame.src = '';
+    }, 300);
+}
+
+function openFullPreview() {
+    const modalProjectLink = document.getElementById('modalProjectLink');
+    if (modalProjectLink && modalProjectLink.href) {
+        window.open(modalProjectLink.href, '_blank');
+    }
+}
 
 // ===============================
 // LOADER INICIAL
@@ -29,7 +214,9 @@ function initLoader() {
     window.addEventListener('load', () => {
         setTimeout(() => {
             const loader = document.getElementById('loader');
-            loader.classList.add('hidden');
+            if (loader) {
+                loader.classList.add('hidden');
+            }
         }, 1500);
     });
 }
@@ -40,6 +227,8 @@ function initLoader() {
 function initThemeToggle() {
     const themeToggle = document.getElementById('themeToggle');
     const body = document.body;
+
+    if (!themeToggle) return;
 
     // Cargar tema guardado o usar modo claro por defecto
     const savedTheme = localStorage.getItem('theme') || 'light';
@@ -150,7 +339,8 @@ function initSmoothNavigation() {
             e.preventDefault();
             const target = document.querySelector(this.getAttribute('href'));
             if (target) {
-                const headerHeight = document.querySelector('header').offsetHeight;
+                const header = document.querySelector('header');
+                const headerHeight = header ? header.offsetHeight : 0;
                 const targetPosition = target.offsetTop - headerHeight;
                 
                 window.scrollTo({
@@ -163,7 +353,7 @@ function initSmoothNavigation() {
 }
 
 // ===============================
-// FORMULARIO DE CONTACTO
+// FORMULARIO DE CONTACTO CON EMAILJS
 // ===============================
 function initContactForm() {
     const contactForm = document.getElementById('contactForm');
@@ -186,19 +376,60 @@ function initContactForm() {
         submitButton.disabled = true;
 
         try {
-            // Simular envío del formulario (aquí puedes integrar tu API)
-            await simulateFormSubmission(formData);
+            // Enviar email usando EmailJS
+            await sendEmail(formData);
             
             // Mostrar mensaje de éxito
             showNotification('¡Mensaje enviado correctamente! Te contactaré pronto.', 'success');
             contactForm.reset();
             
         } catch (error) {
+            console.error('Error al enviar email:', error);
             showNotification('Error al enviar el mensaje. Por favor, intenta de nuevo.', 'error');
         } finally {
             submitButton.innerHTML = originalText;
             submitButton.disabled = false;
         }
+    });
+}
+
+// Enviar email con EmailJS
+async function sendEmail(formData) {
+    const templateParams = {
+        from_name: formData.get('name'),
+        from_email: formData.get('email'),
+        subject: formData.get('subject'),
+        message: formData.get('message'),
+        to_email: 'lucas.alvarez.bernardez.99@gmail.com'
+    };
+
+    // Para usar EmailJS, necesitas registrarte en https://www.emailjs.com/
+    // y obtener tu USER_ID, SERVICE_ID y TEMPLATE_ID
+    
+    // Simulación del envío (reemplazar por EmailJS real)
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            // Simular envío exitoso
+            console.log('Email enviado:', templateParams);
+            resolve();
+            
+            // Para implementar EmailJS real, descomenta y configura:
+            /*
+            if (typeof emailjs !== 'undefined') {
+                emailjs.send('YOUR_SERVICE_ID', 'YOUR_TEMPLATE_ID', templateParams, 'YOUR_USER_ID')
+                    .then((response) => {
+                        console.log('Email enviado exitosamente:', response);
+                        resolve(response);
+                    })
+                    .catch((error) => {
+                        console.error('Error al enviar email:', error);
+                        reject(error);
+                    });
+            } else {
+                reject(new Error('EmailJS no está cargado'));
+            }
+            */
+        }, 2000);
     });
 }
 
@@ -238,68 +469,12 @@ function isValidEmail(email) {
     return emailRegex.test(email);
 }
 
-// Simular envío del formulario
-function simulateFormSubmission(formData) {
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            console.log('Formulario enviado:', Object.fromEntries(formData));
-            resolve();
-        }, 2000);
-    });
-}
-
-// Mostrar notificaciones
-function showNotification(message, type = 'info') {
-    // Crear elemento de notificación
-    const notification = document.createElement('div');
-    notification.className = `notification notification-${type}`;
-    notification.innerHTML = `
-        <div class="notification-content">
-            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
-            <span>${message}</span>
-        </div>
-    `;
-
-    // Agregar estilos dinámicamente
-    notification.style.cssText = `
-        position: fixed;
-        top: 100px;
-        right: 20px;
-        background: ${type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6'};
-        color: white;
-        padding: 1rem 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-        z-index: 10000;
-        opacity: 0;
-        transform: translateX(100%);
-        transition: all 0.3s ease;
-    `;
-
-    document.body.appendChild(notification);
-
-    // Animar entrada
-    setTimeout(() => {
-        notification.style.opacity = '1';
-        notification.style.transform = 'translateX(0)';
-    }, 100);
-
-    // Remover después de 4 segundos
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateX(100%)';
-        setTimeout(() => {
-            notification.remove();
-        }, 300);
-    }, 4000);
-}
-
 // ===============================
 // HEADER SCROLL EFFECT
 // ===============================
 function initHeaderScrollEffect() {
-    let lastScrollY = window.scrollY;
     const header = document.querySelector('header');
+    if (!header) return;
 
     window.addEventListener('scroll', () => {
         const currentScrollY = window.scrollY;
@@ -315,8 +490,6 @@ function initHeaderScrollEffect() {
                 : 'rgba(255, 255, 255, 0.1)';
             header.style.backdropFilter = 'blur(10px)';
         }
-
-        lastScrollY = currentScrollY;
     });
 }
 
@@ -373,34 +546,16 @@ function initAdditionalEffects() {
     window.addEventListener('scroll', () => {
         const scrolled = window.pageYOffset;
         const hero = document.querySelector('.hero');
-        if (hero) {
-            hero.style.transform = `translateY(${scrolled * 0.5}px)`;
+        if (hero && scrolled < window.innerHeight) {
+            hero.style.transform = `translateY(${scrolled * 0.3}px)`;
         }
     });
 
-    // Efecto hover en las cards de proyecto
-    document.querySelectorAll('.project-card').forEach(card => {
-        card.addEventListener('mouseenter', () => {
-            card.style.transform = 'translateY(-10px) rotateY(5deg)';
-        });
-
-        card.addEventListener('mouseleave', () => {
-            card.style.transform = 'translateY(0) rotateY(0)';
-        });
-    });
-
-    // Efecto de click en botones
+    // Efecto de click en botones con ripple
     document.querySelectorAll('.btn').forEach(btn => {
         btn.addEventListener('click', function(e) {
             let ripple = document.createElement('span');
-            ripple.style.cssText = `
-                position: absolute;
-                border-radius: 50%;
-                background: rgba(255,255,255,0.6);
-                transform: scale(0);
-                animation: ripple 0.6s linear;
-                pointer-events: none;
-            `;
+            ripple.classList.add('ripple-effect');
 
             const rect = this.getBoundingClientRect();
             const size = Math.max(rect.width, rect.height);
@@ -417,18 +572,116 @@ function initAdditionalEffects() {
             }, 600);
         });
     });
+}
 
-    // Agregar animación de ripple al CSS dinámicamente
-    const style = document.createElement('style');
-    style.textContent = `
-        @keyframes ripple {
-            to {
-                transform: scale(4);
-                opacity: 0;
-            }
-        }
+// ===============================
+// NOTIFICACIONES
+// ===============================
+function showNotification(message, type = 'success') {
+    // Crear elemento de notificación
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    notification.innerHTML = `
+        <div class="notification-content">
+            <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+            <span>${message}</span>
+        </div>
     `;
-    document.head.appendChild(style);
+
+    document.body.appendChild(notification);
+
+    // Animar entrada
+    setTimeout(() => notification.classList.add('show'), 100);
+
+    // Remover después de 4 segundos
+    setTimeout(() => {
+        notification.classList.remove('show');
+        setTimeout(() => notification.remove(), 300);
+    }, 4000);
+}
+
+// ===============================
+// EVENTOS DEL MODAL
+// ===============================
+function initModalEvents() {
+    const modal = document.getElementById('projectModal');
+    const modalClose = document.getElementById('modalClose');
+
+    // Cerrar modal con botón X
+    if (modalClose) {
+        modalClose.addEventListener('click', closeProjectModal);
+    }
+
+    // Cerrar modal haciendo clic fuera del contenido
+    if (modal) {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                closeProjectModal();
+            }
+        });
+    }
+
+    // Cerrar modal con tecla ESC
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && modal && modal.classList.contains('show')) {
+            closeProjectModal();
+        }
+    });
+}
+
+// ===============================
+// CONFIGURACIÓN DE EMAILJS
+// ===============================
+function initEmailJS() {
+    // Para usar EmailJS, descomenta y configura con tus credenciales:
+    /*
+    // Cargar EmailJS dinámicamente
+    const script = document.createElement('script');
+    script.src = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js';
+    script.onload = () => {
+        emailjs.init("TU_USER_ID_DE_EMAILJS");
+        console.log('📧 EmailJS inicializado');
+    };
+    document.head.appendChild(script);
+    */
+    
+    console.log('📧 EmailJS configurado (modo simulación)');
+}
+
+// ===============================
+// GESTIÓN DEL ESTADO DE LA APLICACIÓN
+// ===============================
+function initAppState() {
+    // Cargar configuración guardada
+    const savedConfig = JSON.parse(localStorage.getItem('portfolioConfig') || '{}');
+    
+    // Aplicar configuración si existe
+    if (savedConfig.name) {
+        const nameElements = document.querySelectorAll('h1, .logo');
+        nameElements.forEach(el => {
+            if (el.textContent && el.textContent.includes('Lucas Alvarez')) {
+                el.textContent = el.textContent.replace('Lucas Alvarez', savedConfig.name);
+            }
+        });
+    }
+
+    if (savedConfig.email) {
+        const emailLinks = document.querySelectorAll('a[href^="mailto:"]');
+        emailLinks.forEach(link => {
+            link.href = `mailto:${savedConfig.email}`;
+            const span = link.querySelector('span');
+            if (span) span.textContent = savedConfig.email;
+        });
+    }
+
+    if (savedConfig.phone) {
+        const phoneLinks = document.querySelectorAll('a[href^="tel:"]');
+        phoneLinks.forEach(link => {
+            link.href = `tel:${savedConfig.phone}`;
+            const span = link.querySelector('span');
+            if (span) span.textContent = savedConfig.phone;
+        });
+    }
 }
 
 // ===============================
@@ -446,24 +699,66 @@ function debounce(func, wait) {
     };
 }
 
-// ===============================
-// INICIALIZACIÓN
-// ===============================
-function init() {
-    // Inicializar todos los módulos
-    initLoader();
-    initThemeToggle();
-    initTypingAnimation();
-    initScrollAnimations();
-    initSmoothNavigation();
-    initContactForm();
-    initHeaderScrollEffect();
-    initParticleEffect();
-    initAdditionalEffects();
-
-    console.log('🚀 Portfolio de Lucas Alvarez cargado correctamente!');
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
 }
 
+// ===============================
+// INICIALIZACIÓN PRINCIPAL
+// ===============================
+function init() {
+    console.log('🚀 Inicializando Portfolio de Lucas Alvarez...');
+
+    try {
+        // Inicializar módulos principales
+        initLoader();
+        initThemeToggle();
+        initEmailJS();
+        initAppState();
+        loadProjects();
+        initTypingAnimation();
+        initScrollAnimations();
+        initSmoothNavigation();
+        initContactForm();
+        initHeaderScrollEffect();
+        initParticleEffect();
+        initAdditionalEffects();
+        initModalEvents();
+
+        console.log('✅ Portfolio cargado correctamente!');
+        
+        // Mostrar bienvenida en consola
+        console.log(`
+╔══════════════════════════════════════╗
+║     Portfolio - Lucas Alvarez        ║
+║  Desarrollador Web Full Stack        ║
+╚══════════════════════════════════════╝
+
+🎨 Diseño: Moderno y responsive
+⚡ Performance: Optimizado
+🌙 Tema: Dark/Light mode
+📱 Mobile: First design
+🔧 Admin: Panel incluido
+
+Hecho con ❤️ y mucho ☕
+        `);
+    } catch (error) {
+        console.error('❌ Error al inicializar el portfolio:', error);
+    }
+}
+
+// ===============================
+// PUNTO DE ENTRADA
+// ===============================
 // Inicializar cuando el DOM esté listo
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
@@ -472,11 +767,32 @@ if (document.readyState === 'loading') {
 }
 
 // ===============================
-// EXPORTAR FUNCIONES (OPCIONAL)
+// EXPORTAR FUNCIONES GLOBALES
 // ===============================
-// Si necesitas acceder a estas funciones desde el exterior
+// Hacer funciones disponibles globalmente para uso en HTML
 window.portfolioApp = {
+    // Funciones principales
     showNotification,
     createParticle,
-    typeAnimation
+    typeAnimation,
+    openProjectModal,
+    closeProjectModal,
+    openFullPreview,
+    
+    // Funciones de utilidad
+    debounce,
+    throttle,
+    
+    // Estado de la aplicación
+    projects,
+    loadProjects,
+    renderProjects,
+    
+    // Configuración
+    typingConfig
 };
+
+// Hacer funciones disponibles globalmente
+window.openProjectModal = openProjectModal;
+window.closeProjectModal = closeProjectModal;
+window.openFullPreview = openFullPreview;
