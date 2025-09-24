@@ -665,6 +665,15 @@ function initAppState() {
         });
     }
 
+    if (savedConfig.title) {
+        const titleElements = document.querySelectorAll('.subtitle');
+        titleElements.forEach(el => {
+            if (el.textContent && el.textContent.includes('Desarrollador Web')) {
+                el.textContent = savedConfig.title;
+            }
+        });
+    }
+
     if (savedConfig.email) {
         const emailLinks = document.querySelectorAll('a[href^="mailto:"]');
         emailLinks.forEach(link => {
@@ -680,6 +689,51 @@ function initAppState() {
             link.href = `tel:${savedConfig.phone}`;
             const span = link.querySelector('span');
             if (span) span.textContent = savedConfig.phone;
+        });
+    }
+
+    if (savedConfig.location) {
+        const locationElements = document.querySelectorAll('.contact-item');
+        locationElements.forEach(item => {
+            const icon = item.querySelector('i.fa-map-marker-alt');
+            if (icon) {
+                const span = item.querySelector('span');
+                if (span) span.textContent = savedConfig.location;
+            }
+        });
+    }
+
+    // Aplicar textos de "Sobre mí"
+    if (savedConfig.aboutText1 || savedConfig.aboutText2 || savedConfig.aboutText3) {
+        const aboutTextElements = document.querySelectorAll('.about-text p');
+        if (savedConfig.aboutText1 && aboutTextElements[0]) {
+            aboutTextElements[0].textContent = savedConfig.aboutText1;
+        }
+        if (savedConfig.aboutText2 && aboutTextElements[1]) {
+            aboutTextElements[1].textContent = savedConfig.aboutText2;
+        }
+        if (savedConfig.aboutText3 && aboutTextElements[2]) {
+            aboutTextElements[2].textContent = savedConfig.aboutText3;
+        }
+    }
+
+    // Aplicar estadísticas
+    const statItems = document.querySelectorAll('.stat-item h3');
+    if (savedConfig.statProjects && statItems[0]) {
+        statItems[0].textContent = savedConfig.statProjects + '+';
+    }
+    if (savedConfig.statExperience && statItems[1]) {
+        statItems[1].textContent = savedConfig.statExperience + '+';
+    }
+    if (savedConfig.statSatisfaction && statItems[2]) {
+        statItems[2].textContent = savedConfig.statSatisfaction + '%';
+    }
+
+    // Aplicar imagen de perfil
+    if (savedConfig.profileImage) {
+        const profileImages = document.querySelectorAll('.about-image img');
+        profileImages.forEach(img => {
+            img.src = savedConfig.profileImage;
         });
     }
 }

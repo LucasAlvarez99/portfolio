@@ -1,4 +1,76 @@
-.image-upload-container {
+// ===============================
+        // EVENT LISTENERS
+        // ===============================
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            initializeDefaultProjects();
+            initImageUpload();
+            initInactivityTracker();
+            updateProjectsList();
+            updateStats();
+            loadSavedConfiguration();
+
+            // Formulario de agregar proyecto
+            document.getElementById('addProjectForm').addEventListener('submit', function(e) {
+                e.preventDefault();
+                const formData = new FormData(this);
+                const projectData = {
+                    title: formData.get('title'),
+                    description: formData.get('description'),
+                    link: formData.get('link'),
+                    github: formData.get('github')
+                };
+                addProject(projectData);
+            });
+
+            // Input de tecnologías
+            const techInput = document.getElementById('techInput');
+            if (techInput) {
+                techInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const tech = this.value.trim();
+                        if (tech) {
+                            addTech(tech);
+                            this.value = '';
+                        }
+                    }
+                });
+            }
+        });
+
+        function loadSavedConfiguration() {
+            const savedConfig = JSON.parse(localStorage.getItem('portfolioConfig') || '{}');
+            
+            // Cargar valores guardados
+            if (savedConfig.name) document.getElementById('portfolioName').value = savedConfig.name;
+            if (savedConfig.title) document.getElementById('portfolioTitle').value = savedConfig.title;
+            if (savedConfig.email) document.getElementById('portfolioEmail').value = savedConfig.email;
+        function loadSavedConfiguration() {
+            const savedConfig = JSON.parse(localStorage.getItem('portfolioConfig') || '{}');
+            
+            // Cargar valores guardados
+            if (savedConfig.name) document.getElementById('portfolioName').value = savedConfig.name;
+            if (savedConfig.title) document.getElementById('portfolioTitle').value = savedConfig.title;
+            if (savedConfig.email) document.getElementById('portfolioEmail').value = savedConfig.email;
+            if (savedConfig.phone) document.getElementById('portfolioPhone').value = savedConfig.phone;
+            if (savedConfig.location) document.getElementById('portfolioLocation').value = savedConfig.location;
+            
+            // Cargar textos sobre mí
+            if (savedConfig.aboutText1) document.getElementById('aboutText1').value = savedConfig.aboutText1;
+            if (savedConfig.aboutText2) document.getElementById('aboutText2').value = savedConfig.aboutText2;
+            if (savedConfig.aboutText3) document.getElementById('aboutText3').value = savedConfig.aboutText3;
+            
+            // Cargar estadísticas
+            if (savedConfig.statProjects) document.getElementById('statProjects').value = savedConfig.statProjects;
+            if (savedConfig.statExperience) document.getElementById('statExperience').value = savedConfig.statExperience;
+            if (savedConfig.statSatisfaction) document.getElementById('statSatisfaction').value = savedConfig.statSatisfaction;
+        }
+
+        console.log('🔧 Panel de administración cargado correctamente!');
+    </script>
+</body>
+</html>        .image-upload-container {
             margin-top: 0.5rem;
         }
 
@@ -28,6 +100,13 @@
             transform: scale(1.02);
         }
 
+        .upload-content {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
         .upload-content i {
             font-size: 3rem;
             color: var(--accent-primary);
@@ -48,6 +127,7 @@
         .image-preview {
             position: relative;
             max-width: 100%;
+            width: 100%;
         }
 
         .image-preview img {
@@ -55,6 +135,7 @@
             max-height: 200px;
             border-radius: 8px;
             box-shadow: var(--shadow);
+            object-fit: cover;
         }
 
         .remove-image {
@@ -78,6 +159,74 @@
         .remove-image:hover {
             transform: scale(1.1);
             box-shadow: var(--shadow-hover);
+        }
+
+        .about-section {
+            margin-top: 2rem;
+        }
+
+        .about-editor {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .profile-image-upload {
+            border: 2px dashed var(--border-color);
+            border-radius: 15px;
+            padding: 1rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: var(--bg-primary);
+            min-height: 200px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .profile-image-upload:hover {
+            border-color: var(--accent-primary);
+            background: rgba(14, 165, 233, 0.05);
+        }
+
+        .profile-preview {
+            position: relative;
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            overflow: hidden;
+            margin: 0 auto;
+        }
+
+        .profile-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .activity-indicator {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: var(--accent-primary);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            display: none;
+            z-index: 1000;
+        }
+
+        .activity-indicator.warning {
+            background: var(--error);
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
         }
 
         .logout-btn {
@@ -479,6 +628,10 @@
     </style>
 </head>
 <body>
+    <div class="activity-indicator" id="activityIndicator">
+        Sesión activa
+    </div>
+
     <header class="admin-header">
         <nav class="admin-nav">
             <a href="index.html" class="admin-logo">
@@ -491,6 +644,9 @@
                 <a href="index.html" class="btn btn-secondary">
                     <i class="fas fa-eye"></i> Ver Portfolio
                 </a>
+                <button class="logout-btn" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
             </div>
         </nav>
     </header>
@@ -572,13 +728,76 @@
             <!-- Configuración -->
             <div class="admin-card">
                 <h2 class="card-title">
-                    <i class="fas fa-cog"></i>
-                    Configuración
+                    <i class="fas fa-user"></i>
+                    Información Personal
                 </h2>
-                <div class="form-group">
-                    <label for="portfolioName">Nombre del Portfolio</label>
-                    <input type="text" id="portfolioName" value="Lucas Alvarez">
+                <div class="about-section">
+                    <div class="about-editor">
+                        <div class="profile-image-section">
+                            <label>Foto de Perfil</label>
+                            <input type="file" id="profileImage" accept="image/*" style="display: none;">
+                            <div class="profile-image-upload" onclick="document.getElementById('profileImage').click()">
+                                <div class="profile-upload-content" id="profileUploadContent">
+                                    <i class="fas fa-user-circle"></i>
+                                    <p>Subir Foto</p>
+                                </div>
+                                <div class="profile-preview" id="profilePreview" style="display: none;">
+                                    <img id="profileImg" src="" alt="Perfil">
+                                    <button type="button" class="remove-image" onclick="removeProfileImage(event)">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="profile-info">
+                            <div class="form-group">
+                                <label for="portfolioName">Nombre Completo</label>
+                                <input type="text" id="portfolioName" value="Lucas Alvarez">
+                            </div>
+                            <div class="form-group">
+                                <label for="portfolioTitle">Título/Cargo</label>
+                                <input type="text" id="portfolioTitle" value="Desarrollador Web">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="aboutText1">Párrafo 1 - Sobre mí</label>
+                        <textarea id="aboutText1" rows="4">¡Hola! Soy Lucas Alvarez, un desarrollador web apasionado por crear experiencias digitales excepcionales. Con más de 3 años de experiencia en el desarrollo frontend y backend, me especializo en construir aplicaciones web modernas y funcionales.</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="aboutText2">Párrafo 2 - Enfoque</label>
+                        <textarea id="aboutText2" rows="4">Mi enfoque se centra en escribir código limpio, escalable y mantener las mejores prácticas de desarrollo. Me encanta aprender nuevas tecnologías y mantenerme actualizado con las últimas tendencias del desarrollo web.</textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="aboutText3">Párrafo 3 - Personal</label>
+                        <textarea id="aboutText3" rows="4">Cuando no estoy programando, disfruto de la fotografía, los videojuegos y explorar nuevos lugares. Siempre estoy abierto a nuevos desafíos y oportunidades de colaboración.</textarea>
+                    </div>
+
+                    <div class="stats-editor">
+                        <h4>Estadísticas</h4>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem;">
+                            <div class="form-group">
+                                <label for="statProjects">Proyectos Completados</label>
+                                <input type="number" id="statProjects" value="50" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label for="statExperience">Años de Experiencia</label>
+                                <input type="number" id="statExperience" value="3" min="0" step="0.5">
+                            </div>
+                            <div class="form-group">
+                                <label for="statSatisfaction">% Satisfacción</label>
+                                <input type="number" id="statSatisfaction" value="100" min="0" max="100">
+                            </div>
+                        </div>
+                    </div>
                 </div>
+
+                <h3 style="margin-top: 2rem; margin-bottom: 1rem;">
+                    <i class="fas fa-cog"></i> Configuración de Contacto
+                </h3>
                 <div class="form-group">
                     <label for="portfolioEmail">Email de Contacto</label>
                     <input type="email" id="portfolioEmail" value="lucas.alvarez.bernardez.99@gmail.com">
@@ -587,12 +806,19 @@
                     <label for="portfolioPhone">Teléfono</label>
                     <input type="text" id="portfolioPhone" value="+54 9 123 456 7890">
                 </div>
-                <button class="btn btn-primary" onclick="saveConfiguration()">
-                    <i class="fas fa-save"></i> Guardar Configuración
-                </button>
-                <button class="btn btn-danger" onclick="clearAllData()" style="margin-top: 1rem;">
-                    <i class="fas fa-trash"></i> Limpiar Todos los Datos
-                </button>
+                <div class="form-group">
+                    <label for="portfolioLocation">Ubicación</label>
+                    <input type="text" id="portfolioLocation" value="Buenos Aires, Argentina">
+                </div>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1rem;">
+                    <button class="btn btn-primary" onclick="saveAllConfiguration()">
+                        <i class="fas fa-save"></i> Guardar Todo
+                    </button>
+                    <button class="btn btn-danger" onclick="clearAllData()">
+                        <i class="fas fa-trash"></i> Limpiar Datos
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -677,12 +903,267 @@
             updateStats();
         }
 
+        // ===============================
+        // GESTIÓN DE LOGOUT
+        // ===============================
+        function logout() {
+            if (confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+                localStorage.removeItem('adminSession');
+                showNotification('Sesión cerrada correctamente', 'success');
+                setTimeout(() => {
+                    window.location.href = 'login.html';
+                }, 1000);
+            }
+        }
+
+        // ===============================
+        // SISTEMA DE AUTO-LOGOUT POR INACTIVIDAD
+        // ===============================
+        let inactivityTimer;
+        let warningTimer;
+        let isWarningShown = false;
+        const INACTIVITY_TIMEOUT = 10000; // 10 segundos
+        const WARNING_TIME = 5000; // 5 segundos antes del logout
+
+        function resetInactivityTimer() {
+            clearTimeout(inactivityTimer);
+            clearTimeout(warningTimer);
+            hideActivityWarning();
+            
+            // Warning timer (5 segundos antes del logout)
+            warningTimer = setTimeout(() => {
+                showActivityWarning();
+            }, WARNING_TIME);
+            
+            // Auto logout timer
+            inactivityTimer = setTimeout(() => {
+                autoLogout();
+            }, INACTIVITY_TIMEOUT);
+        }
+
+        function showActivityWarning() {
+            const indicator = document.getElementById('activityIndicator');
+            indicator.textContent = 'Cerrando sesión en 5 segundos...';
+            indicator.classList.add('warning');
+            indicator.style.display = 'block';
+            isWarningShown = true;
+        }
+
+        function hideActivityWarning() {
+            const indicator = document.getElementById('activityIndicator');
+            indicator.classList.remove('warning');
+            indicator.style.display = 'none';
+            isWarningShown = false;
+        }
+
+        function autoLogout() {
+            showNotification('Sesión cerrada por inactividad', 'error');
+            localStorage.removeItem('adminSession');
+            setTimeout(() => {
+                window.location.href = 'login.html';
+            }, 1000);
+        }
+
+        function initInactivityTracker() {
+            // Eventos que resetean el timer
+            const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart', 'click'];
+            
+            events.forEach(event => {
+                document.addEventListener(event, resetInactivityTimer, true);
+            });
+
+            // Iniciar el timer
+            resetInactivityTimer();
+        }
+
+        // ===============================
+        // GESTIÓN DE IMÁGENES MEJORADA
+        // ===============================
+        let selectedImageBase64 = null;
+        let profileImageBase64 = null;
+
+        function initImageUpload() {
+            const fileInput = document.getElementById('projectImage');
+            const profileInput = document.getElementById('profileImage');
+            const uploadArea = document.querySelector('.image-upload-area');
+            
+            if (!fileInput || !uploadArea) return;
+            
+            // Handle project image
+            fileInput.addEventListener('change', handleFileSelection);
+            
+            // Handle profile image
+            if (profileInput) {
+                profileInput.addEventListener('change', handleProfileImageSelection);
+            }
+            
+            // Drag and drop functionality
+            uploadArea.addEventListener('dragover', handleDragOver);
+            uploadArea.addEventListener('drop', handleDrop);
+            uploadArea.addEventListener('dragleave', handleDragLeave);
+            
+            // Load saved profile image
+            loadProfileImage();
+        }
+
+        function handleFileSelection(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processImageFile(file);
+            }
+        }
+
+        function handleProfileImageSelection(event) {
+            const file = event.target.files[0];
+            if (file) {
+                processProfileImageFile(file);
+            }
+        }
+
+        function handleDragOver(event) {
+            event.preventDefault();
+            event.currentTarget.classList.add('dragover');
+        }
+
+        function handleDrop(event) {
+            event.preventDefault();
+            event.currentTarget.classList.remove('dragover');
+            
+            const files = event.dataTransfer.files;
+            if (files.length > 0) {
+                processImageFile(files[0]);
+            }
+        }
+
+        function handleDragLeave(event) {
+            event.currentTarget.classList.remove('dragover');
+        }
+
+        function processImageFile(file) {
+            if (!validateImageFile(file)) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                selectedImageBase64 = e.target.result;
+                showImagePreview(selectedImageBase64, file.name);
+                showNotification('Imagen cargada correctamente', 'success');
+            };
+            reader.onerror = function() {
+                showNotification('Error al cargar la imagen', 'error');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function processProfileImageFile(file) {
+            if (!validateImageFile(file)) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                profileImageBase64 = e.target.result;
+                showProfileImagePreview(profileImageBase64);
+                showNotification('Imagen de perfil cargada', 'success');
+            };
+            reader.onerror = function() {
+                showNotification('Error al cargar la imagen de perfil', 'error');
+            };
+            reader.readAsDataURL(file);
+        }
+
+        function validateImageFile(file) {
+            // Validar tipo de archivo
+            if (!file.type.startsWith('image/')) {
+                showNotification('Por favor selecciona un archivo de imagen válido', 'error');
+                return false;
+            }
+
+            // Validar tamaño (5MB max)
+            if (file.size > 5 * 1024 * 1024) {
+                showNotification('La imagen es demasiado grande. Máximo 5MB', 'error');
+                return false;
+            }
+
+            return true;
+        }
+
+        function showImagePreview(base64, filename) {
+            const uploadContent = document.getElementById('uploadContent');
+            const imagePreview = document.getElementById('imagePreview');
+            const previewImg = document.getElementById('previewImg');
+            
+            if (!uploadContent || !imagePreview || !previewImg) return;
+            
+            previewImg.src = base64;
+            previewImg.alt = filename;
+            
+            uploadContent.style.display = 'none';
+            imagePreview.style.display = 'block';
+        }
+
+        function showProfileImagePreview(base64) {
+            const uploadContent = document.getElementById('profileUploadContent');
+            const imagePreview = document.getElementById('profilePreview');
+            const previewImg = document.getElementById('profileImg');
+            
+            if (!uploadContent || !imagePreview || !previewImg) return;
+            
+            previewImg.src = base64;
+            uploadContent.style.display = 'none';
+            imagePreview.style.display = 'block';
+        }
+
+        function removeImage(event) {
+            event.stopPropagation();
+            
+            const uploadContent = document.getElementById('uploadContent');
+            const imagePreview = document.getElementById('imagePreview');
+            const fileInput = document.getElementById('projectImage');
+            
+            if (!uploadContent || !imagePreview || !fileInput) return;
+            
+            selectedImageBase64 = null;
+            fileInput.value = '';
+            
+            uploadContent.style.display = 'flex';
+            imagePreview.style.display = 'none';
+        }
+
+        function removeProfileImage(event) {
+            event.stopPropagation();
+            
+            const uploadContent = document.getElementById('profileUploadContent');
+            const imagePreview = document.getElementById('profilePreview');
+            const fileInput = document.getElementById('profileImage');
+            
+            if (!uploadContent || !imagePreview || !fileInput) return;
+            
+            profileImageBase64 = null;
+            fileInput.value = '';
+            
+            uploadContent.style.display = 'flex';
+            imagePreview.style.display = 'none';
+        }
+
+        function loadProfileImage() {
+            const savedConfig = JSON.parse(localStorage.getItem('portfolioConfig') || '{}');
+            if (savedConfig.profileImage) {
+                profileImageBase64 = savedConfig.profileImage;
+                showProfileImagePreview(profileImageBase64);
+            }
+        }
+
         function addProject(projectData) {
+            if (!selectedImageBase64) {
+                showNotification('Por favor selecciona una imagen para el proyecto', 'error');
+                return;
+            }
+
             const newProject = {
                 id: Date.now(),
                 ...projectData,
+                image: selectedImageBase64,
                 technologies: techStack.slice()
             };
+            
             projects.push(newProject);
             saveProjects();
             showNotification('Proyecto agregado exitosamente', 'success');
@@ -700,7 +1181,15 @@
         function clearForm() {
             document.getElementById('addProjectForm').reset();
             techStack = [];
+            selectedImageBase64 = null;
             updateTechTags();
+            
+            // Reset image upload area
+            const uploadContent = document.getElementById('uploadContent');
+            const imagePreview = document.getElementById('imagePreview');
+            
+            uploadContent.style.display = 'block';
+            imagePreview.style.display = 'none';
         }
 
         function updateProjectsList() {
@@ -836,6 +1325,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             initTheme();
             initializeDefaultProjects();
+            initImageUpload();
             updateProjectsList();
             updateStats();
 
@@ -846,7 +1336,6 @@
                 const projectData = {
                     title: formData.get('title'),
                     description: formData.get('description'),
-                    image: formData.get('image'),
                     link: formData.get('link'),
                     github: formData.get('github')
                 };
