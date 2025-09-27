@@ -1,103 +1,8 @@
 /* ===============================
-   VARIABLES CSS Y RESET
+   ESTILOS ESPECÍFICOS DEL PORTFOLIO
 =============================== */
-:root {
-    /* Colores modo claro */
-    --bg-primary: #ffffff;
-    --bg-secondary: #f8fafc;
-    --bg-card: #ffffff;
-    --text-primary: #1e293b;
-    --text-secondary: #64748b;
-    --accent-primary: #0ea5e9;
-    --accent-secondary: #06b6d4;
-    --border-color: #e2e8f0;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    --gradient-primary: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
-}
 
-[data-theme="dark"] {
-    /* Colores modo oscuro */
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-card: #334155;
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --accent-primary: #38bdf8;
-    --accent-secondary: #22d3ee;
-    --border-color: #475569;
-    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3);
-    --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    line-height: 1.6;
-    transition: all 0.3s ease;
-    overflow-x: hidden;
-}
-
-html {
-    scroll-behavior: smooth;
-}
-
-/* ===============================
-   LOADER INICIAL
-=============================== */
-.loader {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: var(--bg-primary);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 9999;
-    transition: opacity 0.5s ease;
-}
-
-.loader-content {
-    text-align: center;
-}
-
-.loader-logo {
-    width: 80px;
-    height: 80px;
-    border: 3px solid var(--accent-primary);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 2rem;
-    font-weight: bold;
-    color: var(--accent-primary);
-    margin: 0 auto 1rem;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
-}
-
-.loader.hidden {
-    opacity: 0;
-    pointer-events: none;
-}
-
-/* ===============================
-   BACKGROUND ANIMADO
-=============================== */
+/* Background animado */
 .animated-bg {
     position: fixed;
     top: 0;
@@ -116,9 +21,7 @@ html {
     50% { background-position: 100% 50%; }
 }
 
-/* ===============================
-   HEADER Y NAVEGACIÓN
-=============================== */
+/* Header */
 header {
     position: fixed;
     top: 0;
@@ -208,31 +111,7 @@ nav {
     transform: scale(1.1);
 }
 
-.theme-toggle {
-    background: none;
-    border: 2px solid var(--accent-primary);
-    color: var(--accent-primary);
-    padding: 0.5rem;
-    border-radius: 50%;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 1.2rem;
-    width: 45px;
-    height: 45px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.theme-toggle:hover {
-    background: var(--accent-primary);
-    color: var(--bg-primary);
-    transform: scale(1.1) rotate(180deg);
-}
-
-/* ===============================
-   SECCIONES GENERALES
-=============================== */
+/* Secciones principales */
 section {
     min-height: 100vh;
     padding: 6rem 2rem;
@@ -261,45 +140,7 @@ section {
     border-radius: 2px;
 }
 
-/* ===============================
-   ANIMACIONES DE SCROLL
-=============================== */
-.fade-in {
-    opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.8s ease;
-}
-
-.fade-in.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.slide-up {
-    opacity: 0;
-    transform: translateY(50px);
-    transition: all 0.8s ease;
-}
-
-.slide-up.visible {
-    opacity: 1;
-    transform: translateY(0);
-}
-
-.zoom-in {
-    opacity: 0;
-    transform: scale(0.8);
-    transition: all 0.8s ease;
-}
-
-.zoom-in.visible {
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* ===============================
-   HERO SECTION
-=============================== */
+/* Hero Section */
 .hero {
     display: flex;
     align-items: center;
@@ -363,9 +204,7 @@ section {
     box-shadow: var(--shadow-hover);
 }
 
-/* ===============================
-   SECCIÓN PROYECTOS
-=============================== */
+/* Sección Proyectos */
 .projects-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
@@ -478,45 +317,7 @@ section {
     gap: 1rem;
 }
 
-.btn {
-    padding: 0.7rem 1.5rem;
-    border: none;
-    border-radius: 25px;
-    text-decoration: none;
-    transition: all 0.3s ease;
-    cursor: pointer;
-    font-size: 0.9rem;
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-}
-
-.btn-primary {
-    background: var(--accent-primary);
-    color: white;
-}
-
-.btn-secondary {
-    background: transparent;
-    color: var(--accent-primary);
-    border: 2px solid var(--accent-primary);
-}
-
-.btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-}
-
-.btn-secondary:hover {
-    background: var(--accent-primary);
-    color: white;
-}
-
-/* ===============================
-   MODAL PARA PROYECTOS (ESTILO VERCEL)
-=============================== */
+/* Modal para proyectos */
 .modal {
     display: none;
     position: fixed;
@@ -625,17 +426,9 @@ section {
     border-radius: 50%;
 }
 
-.control-close {
-    background: #ff5f56;
-}
-
-.control-minimize {
-    background: #ffbd2e;
-}
-
-.control-maximize {
-    background: #27ca3f;
-}
+.control-close { background: #ff5f56; }
+.control-minimize { background: #ffbd2e; }
+.control-maximize { background: #27ca3f; }
 
 .preview-url {
     display: flex;
@@ -652,11 +445,6 @@ section {
 [data-theme="dark"] .preview-url {
     background: #333;
     border-color: #555;
-}
-
-.preview-actions {
-    display: flex;
-    gap: 0.5rem;
 }
 
 .preview-btn {
@@ -755,9 +543,7 @@ section {
     width: 100%;
 }
 
-/* ===============================
-   SECCIÓN HABILIDADES
-=============================== */
+/* Sección Habilidades */
 .skills-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -832,13 +618,7 @@ section {
     transition: width 1s ease-in-out;
 }
 
-.skill-card.visible .level-bar {
-    width: var(--level-width);
-}
-
-/* ===============================
-   SECCIÓN SOBRE MÍ
-=============================== */
+/* Sección Sobre mí */
 .about-content {
     display: grid;
     grid-template-columns: 1fr 2fr;
@@ -858,6 +638,7 @@ section {
     box-shadow: var(--shadow-hover);
     transition: all 0.3s ease;
     border: 5px solid var(--accent-primary);
+    object-fit: cover;
 }
 
 .about-image img:hover {
@@ -910,9 +691,7 @@ section {
     margin: 0;
 }
 
-/* ===============================
-   SECCIÓN CONTACTO
-=============================== */
+/* Sección Contacto */
 .contact-content {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -926,42 +705,6 @@ section {
     border-radius: 20px;
     box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
-}
-
-.form-group {
-    margin-bottom: 1.5rem;
-}
-
-.form-group label {
-    display: block;
-    margin-bottom: 0.5rem;
-    color: var(--text-primary);
-    font-weight: 500;
-}
-
-.form-group input,
-.form-group textarea {
-    width: 100%;
-    padding: 1rem;
-    border: 2px solid var(--border-color);
-    border-radius: 10px;
-    background: var(--bg-primary);
-    color: var(--text-primary);
-    transition: all 0.3s ease;
-    font-family: inherit;
-}
-
-.form-group input:focus,
-.form-group textarea:focus {
-    outline: none;
-    border-color: var(--accent-primary);
-    box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.1);
-    transform: translateY(-2px);
-}
-
-.form-group textarea {
-    resize: vertical;
-    min-height: 120px;
 }
 
 .contact-info {
@@ -1021,50 +764,41 @@ section {
     box-shadow: 0 5px 15px rgba(14, 165, 233, 0.3);
 }
 
-/* ===============================
-   NOTIFICACIONES
-=============================== */
-.notification {
-    position: fixed;
-    top: 100px;
-    right: 20px;
-    padding: 1rem 1.5rem;
-    border-radius: 10px;
-    color: white;
-    font-weight: 500;
-    z-index: 10000;
+/* Animaciones específicas del portfolio */
+.fade-in {
     opacity: 0;
-    transform: translateX(100%);
-    transition: all 0.3s ease;
-    box-shadow: var(--shadow-hover);
+    transform: translateY(30px);
+    transition: all 0.8s ease;
 }
 
-.notification.success {
-    background: #10b981;
-}
-
-.notification.error {
-    background: #ef4444;
-}
-
-.notification.info {
-    background: #3b82f6;
-}
-
-.notification.show {
+.fade-in.visible {
     opacity: 1;
-    transform: translateX(0);
+    transform: translateY(0);
 }
 
-.notification-content {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
+.slide-up {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: all 0.8s ease;
 }
 
-/* ===============================
-   RESPONSIVE DESIGN
-=============================== */
+.slide-up.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.zoom-in {
+    opacity: 0;
+    transform: scale(0.8);
+    transition: all 0.8s ease;
+}
+
+.zoom-in.visible {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* Responsive específico del portfolio */
 @media (max-width: 768px) {
     .nav-links {
         display: none;
@@ -1120,7 +854,6 @@ section {
         flex-direction: column;
     }
 
-    /* Modal responsive */
     .modal-content {
         width: 95%;
         height: 90vh;
@@ -1129,18 +862,6 @@ section {
     .modal-body {
         grid-template-columns: 1fr;
         grid-template-rows: 1fr 1fr;
-    }
-
-    .project-details {
-        padding: 1rem;
-    }
-
-    .preview-header {
-        padding: 0.5rem;
-    }
-
-    .preview-url {
-        display: none;
     }
 }
 
@@ -1172,54 +893,4 @@ section {
     .admin-link {
         display: none;
     }
-
-    .modal-content {
-        width: 100%;
-        height: 100vh;
-        border-radius: 0;
-    }
-}
-
-/* ===============================
-   ANIMACIONES ADICIONALES
-=============================== */
-@keyframes ripple {
-    to {
-        transform: scale(4);
-        opacity: 0;
-    }
-}
-
-.btn-ripple {
-    position: relative;
-    overflow: hidden;
-}
-
-.ripple-effect {
-    position: absolute;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.6);
-    transform: scale(0);
-    animation: ripple 0.6s linear;
-    pointer-events: none;
-}
-
-/* ===============================
-   SCROLL PERSONALIZADO
-=============================== */
-::-webkit-scrollbar {
-    width: 8px;
-}
-
-::-webkit-scrollbar-track {
-    background: var(--bg-secondary);
-}
-
-::-webkit-scrollbar-thumb {
-    background: var(--accent-primary);
-    border-radius: 4px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-    background: var(--accent-secondary);
 }

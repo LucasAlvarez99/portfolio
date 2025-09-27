@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Portfolio</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JavaScript Client -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <link rel="stylesheet" href="../styles/common.css">
+    <link rel="stylesheet" href="../styles/admin.css">
+</head>
+<body>
+    <!-- Activity Indicator -->
+    <div class="activity-indicator" id="activityIndicator">
+        Sesión activa
+    </div>
+
+    <!-- Connection Status -->
+    <div class="connection-status connecting" id="connectionStatus">
+        <i class="fas fa-circle-notch fa-spin"></i>
+        Conectando a Supabase...
+    </div>
+
+    <!-- Header -->
+    <header class="admin-header">
+        <nav class="admin-nav">
+            <a href="../index.html" class="admin-logo">
+                <i class="fas fa-arrow-left"></i> Portfolio Admin
+            </a>
+            <div class="admin-actions">
+                <button class="theme-toggle" id="themeToggle">
+                    <i class="fas fa-sun"></i>
+                </button>
+                <a href="../index.html" class="btn btn-secondary">
+                    <i class="fas fa-eye"></i> Ver Portfolio
+                </a>
+                <button class="btn btn-danger" id="logoutBtn">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Container -->
+    <div class="admin-container">
+        <h1 class="admin-title">Panel de Administración</h1>
+
+        <!-- Stats -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-number" id="totalProjects">0</div>
+                <div class="stat-label">Proyectos Totales</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalViews">1,234</div>
+                <div class="stat-label">Visitas al Portfolio</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="totalMessages">45</div>
+                <div class="stat-label">Mensajes Recibidos</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number" id="dbStatus">
+                    <i class="fas fa-circle-notch fa-spin"></i>
+                </div>
+                <div class="stat-label">Estado de BD</div>
+            </div>
+        </div>
+
+        <!-- Admin Grid -->
+        <div class="admin-grid">
+            <!-- Add Project -->
+            <div class="admin-card">
+                <h2 class="card-title">
+                    <i class="fas fa-plus"></i>
+                    Agregar Proyecto
+                </h2>
+                <form id="addProjectForm">
+                    <div class="form-group">
+                        <label for="projectTitle">Título del Proyecto</label>
+                        <input type="text" id="projectTitle" name="title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="projectDescription">Descripción</label>
+                        <textarea id="projectDescription" name="description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="projectImage">Imagen del Proyecto</label>
+                        <input type="file" id="projectImage" name="image" accept="image/*" required style="display: none;">
+                        <div class="image-upload-area">
+                            <div class="upload-content" id="uploadContent">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Haz clic para seleccionar una imagen</p>
+                                <small>PNG, JPG, GIF hasta 5MB</small>
+                            </div>
+                            <div class="image-preview" id="imagePreview" style="display: none;">
+                                <img id="previewImg" src="" alt="Vista previa">
+                                <button type="button" class="remove-image" onclick="removeImage(event)">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="projectLink">URL del Proyecto</label>
+                        <input type="url" id="projectLink" name="link" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="githubLink">URL de GitHub</label>
+                        <input type="url" id="githubLink" name="github" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="techInput">Tecnologías</label>
+                        <input type="text" id="techInput" placeholder="Escribe una tecnología y presiona Enter">
+                        <div class="tech-input-container" id="techTags"></div>
+                    </div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Agregar Proyecto
+                    </button>
+                </form>
+            </div>
+
+            <!-- Configuration -->
+            <div class="admin-card">
+                <h2 class="card-title">
+                    <i class="fas fa-cog"></i>
+                    Configuración
+                </h2>
+                <div class="form-group">
+                    <label for="portfolioName">Nombre del Portfolio</label>
+                    <input type="text" id="portfolioName" value="Lucas Alvarez">
+                </div>
+                <div class="form-group">
+                    <label for="portfolioEmail">Email de Contacto</label>
+                    <input type="email" id="portfolioEmail" value="lucas.alvarez.bernardez.99@gmail.com">
+                </div>
+                <div class="form-group">
+                    <label for="portfolioPhone">Teléfono</label>
+                    <input type="text" id="portfolioPhone" value="+54 9 123 456 7890">
+                </div>
+                
+                <h3 style="margin: 2rem 0 1rem 0; color: var(--accent-primary);">
+                    <i class="fas fa-database"></i> Configuración de Supabase
+                </h3>
+                <div class="form-group">
+                    <label for="supabaseUrl">Supabase URL</label>
+                    <input type="url" id="supabaseUrl" placeholder="https://tu-proyecto.supabase.co">
+                </div>
+                <div class="form-group">
+                    <label for="supabaseKey">Supabase Anon Key</label>
+                    <input type="text" id="supabaseKey" placeholder="eyJ...">
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <button class="btn btn-primary" onclick="saveConfiguration()">
+                        <i class="fas fa-save"></i> Guardar Config
+                    </button>
+                    <button class="btn btn-warning" onclick="testConnection()">
+                        <i class="fas fa-plug"></i> Probar Conexión
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Projects List -->
+        <div class="admin-card projects-list">
+            <h2 class="card-title">
+                <i class="fas fa-folder"></i>
+                Proyectos Actuales
+                <button class="btn btn-secondary" onclick="loadProjects()" style="margin-left: auto;">
+                    <i class="fas fa-sync-alt"></i> Recargar
+                </button>
+            </h2>
+            <div id="projectsList">
+                <p class="text-center" style="color: var(--text-secondary); padding: 2rem;">
+                    Cargando proyectos...
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script src="../script/common.js"></script>
+    <script src="../script/admin.js"></script>
+</body>
+</html>
