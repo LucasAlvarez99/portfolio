@@ -418,14 +418,133 @@ function animateSkillBar(skillCard) {
 }
 
 // ===============================
-// FORMULARIO DE CONTACTO
+// CONFIGURACIÓN DE EMAILJS PARA PORTFOLIO
 // ===============================
+
+// Configuración de EmailJS (reemplaza con tus credenciales reales)
+const EMAILJS_CONFIG = {
+    serviceID: 'service_2thylwz',
+    templateID: 'template_n2tlb2b', 
+    userID: 'CR6rKM8xVNBO7QF41'
+};
+
+// Inicializar EmailJS cuando se carga la página
+function initEmailJS() {
+    // Verificar si EmailJS está cargado
+    if (typeof emailjs === 'undefined') {
+        console.error('❌ EmailJS no está cargado');
+        return false;
+    }
+    
+    // Inicializar EmailJS con tu User ID
+    emailjs.init(EMAILJS_CONFIG.userID);
+    console.log('✅ EmailJS inicializado correctamente');
+    return true;
+}
+
+// Función mejorada para enviar email
+async function sendContactEmail(formData) {
+    console.log('📧 Enviando email de contacto...');
+    
+    try {
+        // Preparar los datos del template
+        const templateParams = {
+            from_name: formData.get('name'),
+            from_email: formData.get('email'),
+            subject: formData.get('subject'),
+            message: formData.get('message'),
+            to_email: 'lucas.alvarez.bernardez.99@gmail.com',
+            reply_to: formData.get('email'),
+            // Datos adicionales
+            sent_date: new Date().toLocaleDateString('es-ES'),
+            sent_time: new Date().toLocaleTimeString('es-ES'),
+            user_agent: navigator.userAgent.substring(0, 100)
+        };
+        
+        console.log('📤 Enviando con datos:', {
+            nombre: templateParams.from_name,
+            email: templateParams.from_email,
+            asunto: templateParams.subject
+        });
+        
+        // Enviar email usando EmailJS
+        const response = await emailjs.send(
+            EMAILJS_CONFIG.serviceID,
+            EMAILJS_CONFIG.templateID,
+            templateParams
+        );
+        
+        if (response.status === 200) {
+            console.log('✅ Email enviado exitosamente:', response);
+            
+            // También guardar en Supabase si está disponible
+            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                await saveContactMessageToSupabase(templateParams);
+            }
+            
+            return true;
+        } else {
+            throw new Error('Email no enviado: ' + response.text);
+        }
+        
+    } catch (error) {
+        console.error('❌ Error enviando email:', error);
+        
+        // Si EmailJS falla, al menos guardar en Supabase/localStorage
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            await saveContactMessageToSupabase({
+                from_name: formData.get('name'),
+                from_email: formData.get('email'),
+                subject: formData.get('subject'),
+                message: formData.get('message')
+            });
+            console.log('💾 Mensaje guardado en Supabase como respaldo');
+        }
+        
+        throw error;
+    }
+}
+
+// Función para guardar mensaje en Supabase
+async function saveContactMessageToSupabase(messageData) {
+    try {
+        const { data, error } = await supabaseClient
+            .from('contact_messages')
+            .insert([{
+                name: messageData.from_name,
+                email: messageData.from_email,
+                subject: messageData.subject,
+                message: messageData.message,
+                created_at: new Date().toISOString()
+            }]);
+        
+        if (error) {
+            console.error('Error guardando mensaje en Supabase:', error);
+            return false;
+        }
+        
+        console.log('✅ Mensaje guardado en Supabase');
+        return true;
+    } catch (error) {
+        console.error('Error inesperado guardando mensaje:', error);
+        return false;
+    }
+}
+
+// Función mejorada para manejar el formulario de contacto
 function initContactForm() {
     const contactForm = document.getElementById('contactForm');
-    if (!contactForm) return;
+    if (!contactForm) {
+        console.error('❌ Formulario de contacto no encontrado');
+        return;
+    }
+    
+    // Inicializar EmailJS
+    const emailJSReady = initEmailJS();
     
     contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log('📝 Formulario de contacto enviado');
         
         const formData = new FormData(contactForm);
         const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -441,74 +560,121 @@ function initContactForm() {
         submitButton.disabled = true;
         
         try {
-            await sendEmail(formData);
-            showNotification('¡Mensaje enviado correctamente! Te contactaré pronto.', 'success');
+            if (emailJSReady) {
+                // Intentar enviar por EmailJS
+                await sendContactEmail(formData);
+                showNotification('✅ ¡Mensaje enviado correctamente! Te contactaré pronto.', 'success', 5000);
+            } else {
+                // Fallback: solo guardar en Supabase
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    await saveContactMessageToSupabase({
+                        from_name: formData.get('name'),
+                        from_email: formData.get('email'),
+                        subject: formData.get('subject'),
+                        message: formData.get('message')
+                    });
+                    showNotification('✅ Mensaje guardado correctamente. Te contactaré pronto.', 'success', 5000);
+                } else {
+                    showNotification('⚠️ Mensaje procesado. Te contactaré pronto.', 'warning', 5000);
+                }
+            }
+            
+            // Limpiar formulario
             contactForm.reset();
+            
+            // Analytics (si está disponible)
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'contact_form_submit', {
+                    'event_category': 'Contact',
+                    'event_label': 'Form Submit Success'
+                });
+            }
+            
         } catch (error) {
-            console.error('Error al enviar email:', error);
-            showNotification('Error al enviar el mensaje. Por favor, intenta de nuevo.', 'error');
+            console.error('❌ Error al enviar mensaje:', error);
+            
+            let errorMessage = 'Error al enviar el mensaje. ';
+            if (error.text && error.text.includes('Invalid')) {
+                errorMessage += 'Verifica la configuración de EmailJS.';
+            } else if (error.text && error.text.includes('network')) {
+                errorMessage += 'Verifica tu conexión a internet.';
+            } else {
+                errorMessage += 'Por favor, intenta de nuevo o contáctame directamente.';
+            }
+            
+            showNotification(errorMessage, 'error', 8000);
+            
         } finally {
+            // Restaurar botón
             submitButton.innerHTML = originalText;
             submitButton.disabled = false;
         }
     });
 }
 
+// Validación del formulario de contacto
 function validateContactForm(formData) {
-    const name = formData.get('name');
-    const email = formData.get('email');
-    const subject = formData.get('subject');
-    const message = formData.get('message');
+    const name = formData.get('name')?.trim();
+    const email = formData.get('email')?.trim();
+    const subject = formData.get('subject')?.trim();
+    const message = formData.get('message')?.trim();
     
-    if (!validateRequired(name, 'Nombre') ||
-        !validateMinLength(name, 2, 'Nombre')) {
+    // Validar nombre
+    if (!name || name.length < 2) {
+        showNotification('Por favor ingresa tu nombre completo', 'error');
         return false;
     }
     
-    if (!validateRequired(email, 'Email') ||
-        !validateEmail(email)) {
-        showNotification('Por favor, ingresa un email válido.', 'error');
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+        showNotification('Por favor ingresa un email válido', 'error');
         return false;
     }
     
-    if (!validateRequired(subject, 'Asunto') ||
-        !validateMinLength(subject, 3, 'Asunto')) {
+    // Validar asunto
+    if (!subject || subject.length < 3) {
+        showNotification('El asunto debe tener al menos 3 caracteres', 'error');
         return false;
     }
     
-    if (!validateRequired(message, 'Mensaje') ||
-        !validateMinLength(message, 10, 'Mensaje')) {
+    // Validar mensaje
+    if (!message || message.length < 10) {
+        showNotification('El mensaje debe tener al menos 10 caracteres', 'error');
         return false;
     }
     
     return true;
 }
 
-async function sendEmail(formData) {
-    const templateParams = {
-        from_name: formData.get('name'),
-        from_email: formData.get('email'),
-        subject: formData.get('subject'),
-        message: formData.get('message'),
-        to_email: 'lucas.alvarez.bernardez.99@gmail.com'
-    };
+// Función de prueba para el email
+function testEmailFunction() {
+    console.log('🧪 Probando función de email...');
     
-    // Integración con EmailJS
-    if (typeof emailjs !== 'undefined') {
-        const serviceId = 'YOUR_SERVICE_ID';
-        const templateId = 'YOUR_TEMPLATE_ID';
-        const userId = 'YOUR_USER_ID';
-        
-        return emailjs.send(serviceId, templateId, templateParams, userId);
-    } else {
-        // Fallback: simulación
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                console.log('Email enviado (simulación):', templateParams);
-                resolve();
-            }, 2000);
+    const testFormData = new FormData();
+    testFormData.append('name', 'Test Usuario');
+    testFormData.append('email', 'test@example.com');
+    testFormData.append('subject', 'Prueba de Contacto');
+    testFormData.append('message', 'Este es un mensaje de prueba desde la consola.');
+    
+    sendContactEmail(testFormData)
+        .then(() => {
+            console.log('✅ Test de email exitoso');
+        })
+        .catch((error) => {
+            console.error('❌ Test de email falló:', error);
         });
-    }
+}
+
+// Exportar funciones para uso global
+window.testEmailFunction = testEmailFunction;
+window.initContactForm = initContactForm;
+
+// Auto-inicialización cuando el DOM esté listo
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initContactForm);
+} else {
+    initContactForm();
 }
 
 // ===============================
