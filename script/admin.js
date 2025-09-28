@@ -10,8 +10,8 @@ let supabaseClient = null;
 
 // Configuración de inactividad
 const INACTIVITY_CONFIG = {
-    timeout: 10000, // 10 segundos
-    warningTime: 5000 // 5 segundos antes del logout
+    timeout: 30000, // 30 segundos
+    warningTime: 25000 // 5 segundos antes del logout
 };
 
 let inactivityTimer;
