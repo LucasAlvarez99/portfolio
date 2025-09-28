@@ -1,5 +1,5 @@
 // ===============================
-// LÓGICA ESPECÍFICA DEL ADMIN
+// ADMIN.JS - CON CREDENCIALES REALES
 // ===============================
 
 // Variables globales del admin
@@ -31,7 +31,7 @@ function initAdmin() {
     }
 
     // Inicializar componentes
-    initSupabase();
+    initSupabaseWithCredentials();
     initInactivityTimer();
     initImageUpload();
     initTechTags();
@@ -39,65 +39,88 @@ function initAdmin() {
     initLogoutButton();
     loadProjects();
     updateStats();
+    loadSavedConfiguration();
     
     console.log('✅ Admin inicializado correctamente');
 }
 
 // ===============================
-// SUPABASE INTEGRATION
+// SUPABASE CON CREDENCIALES REALES
 // ===============================
-function initSupabase() {
-    const config = loadConfig('supabaseConfig', {});
+function initSupabaseWithCredentials() {
+    // Tus credenciales reales
+    const SUPABASE_URL = 'https://gacaofljolawsefbelgc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhY2FvZmxqb2xhd3NlZmJlbGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3NTQyMjMsImV4cCI6MjA3NDMzMDIyM30.3X0NA-_cRqVQSbu-cp1Ge4ToMbAVO2QqNr-yAPOZBho';
     
-    if (config.url && config.key) {
-        try {
-            supabaseClient = supabase.createClient(config.url, config.key);
-            updateConnectionStatus('connected');
-            console.log('✅ Supabase conectado');
-        } catch (error) {
-            console.error('❌ Error conectando a Supabase:', error);
+    try {
+        if (typeof supabase === 'undefined') {
+            console.error('❌ Supabase client no está cargado');
             updateConnectionStatus('disconnected');
+            showNotification('Error: Supabase no está cargado', 'error');
+            return;
         }
-    } else {
+        
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        updateConnectionStatus('connected');
+        
+        // Guardar credenciales en localStorage también
+        saveConfig('supabaseConfig', { 
+            url: SUPABASE_URL, 
+            key: SUPABASE_ANON_KEY 
+        });
+        
+        // Actualizar campos del formulario
+        const urlField = document.getElementById('supabaseUrl');
+        const keyField = document.getElementById('supabaseKey');
+        
+        if (urlField) urlField.value = SUPABASE_URL;
+        if (keyField) keyField.value = SUPABASE_ANON_KEY;
+        
+        console.log('✅ Supabase inicializado con credenciales reales');
+        
+        // Test inicial de conexión
+        testSupabaseConnection();
+        
+    } catch (error) {
+        console.error('❌ Error inicializando Supabase:', error);
         updateConnectionStatus('disconnected');
-        showNotification('Configura Supabase para usar la base de datos', 'warning');
+        showNotification('Error conectando a Supabase: ' + error.message, 'error');
     }
 }
 
-async function testConnection() {
-    const url = document.getElementById('supabaseUrl').value;
-    const key = document.getElementById('supabaseKey').value;
-    
-    if (!url || !key) {
-        showNotification('Por favor completa URL y Key de Supabase', 'error');
-        return;
-    }
-    
-    showLoader();
-    updateConnectionStatus('connecting');
-    
+async function testSupabaseConnection() {
     try {
-        const testClient = supabase.createClient(url, key);
-        const { data, error } = await testClient.from('projects').select('*').limit(1);
+        console.log('🔌 Probando conexión a Supabase...');
         
-        if (error) throw error;
+        const { data, error } = await supabaseClient
+            .from('projects')
+            .select('*')
+            .limit(1);
         
-        // Guardar configuración
-        saveConfig('supabaseConfig', { url, key });
-        supabaseClient = testClient;
+        if (error) {
+            console.error('❌ Error en test de conexión:', error);
+            
+            if (error.message.includes('relation "projects" does not exist')) {
+                console.log('💡 La tabla "projects" no existe. Creándola...');
+                showNotification('Tabla "projects" no encontrada. Verifica tu configuración SQL.', 'warning');
+            } else {
+                showNotification('Error de conexión: ' + error.message, 'error');
+            }
+            
+            updateConnectionStatus('disconnected');
+            return false;
+        }
         
+        console.log('✅ Conexión exitosa. Datos:', data);
         updateConnectionStatus('connected');
-        showNotification('¡Conexión exitosa a Supabase!', 'success');
-        
-        // Cargar proyectos desde Supabase
-        await loadProjectsFromSupabase();
+        showNotification('¡Conexión exitosa a Supabase!', 'success', 3000);
+        return true;
         
     } catch (error) {
-        console.error('Error en test de conexión:', error);
+        console.error('❌ Error inesperado:', error);
         updateConnectionStatus('disconnected');
-        showNotification('Error conectando a Supabase: ' + error.message, 'error');
-    } finally {
-        hideLoader();
+        showNotification('Error inesperado: ' + error.message, 'error');
+        return false;
     }
 }
 
@@ -105,30 +128,32 @@ function updateConnectionStatus(status) {
     const indicator = document.getElementById('connectionStatus');
     const dbStatus = document.getElementById('dbStatus');
     
-    if (!indicator) return;
-    
-    indicator.className = `connection-status ${status}`;
-    
-    switch (status) {
-        case 'connected':
-            indicator.innerHTML = '<i class="fas fa-check-circle"></i> Conectado a Supabase';
-            if (dbStatus) dbStatus.innerHTML = '<i class="fas fa-check-circle"></i>';
-            break;
-        case 'disconnected':
-            indicator.innerHTML = '<i class="fas fa-times-circle"></i> Desconectado';
-            if (dbStatus) dbStatus.innerHTML = '<i class="fas fa-times-circle"></i>';
-            break;
-        case 'connecting':
-            indicator.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Conectando...';
-            if (dbStatus) dbStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
-            break;
+    if (indicator) {
+        indicator.className = `connection-status ${status}`;
+        
+        switch (status) {
+            case 'connected':
+                indicator.innerHTML = '<i class="fas fa-check-circle"></i> Conectado a Supabase';
+                if (dbStatus) dbStatus.innerHTML = '<i class="fas fa-check-circle"></i>';
+                break;
+            case 'disconnected':
+                indicator.innerHTML = '<i class="fas fa-times-circle"></i> Desconectado';
+                if (dbStatus) dbStatus.innerHTML = '<i class="fas fa-times-circle"></i>';
+                break;
+            case 'connecting':
+                indicator.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i> Conectando...';
+                if (dbStatus) dbStatus.innerHTML = '<i class="fas fa-circle-notch fa-spin"></i>';
+                break;
+        }
     }
 }
 
 // ===============================
-// GESTIÓN DE PROYECTOS
+// GESTIÓN DE PROYECTOS CON SUPABASE
 // ===============================
 async function loadProjects() {
+    console.log('📦 Cargando proyectos...');
+    
     if (supabaseClient) {
         await loadProjectsFromSupabase();
     } else {
@@ -140,19 +165,28 @@ async function loadProjects() {
 
 async function loadProjectsFromSupabase() {
     try {
+        console.log('🔍 Cargando desde Supabase...');
+        
         const { data, error } = await supabaseClient
             .from('projects')
             .select('*')
             .order('created_at', { ascending: false });
         
-        if (error) throw error;
+        if (error) {
+            console.error('Error cargando proyectos:', error);
+            showNotification('Error cargando desde Supabase, usando localStorage', 'warning');
+            loadProjectsFromLocalStorage();
+            return;
+        }
         
         projects = data || [];
-        console.log(`📦 Cargados ${projects.length} proyectos desde Supabase`);
+        console.log(`✅ ${projects.length} proyectos cargados desde Supabase`);
+        
+        // Sincronizar con localStorage como backup
+        saveConfig('portfolioProjects', projects);
         
     } catch (error) {
-        console.error('Error cargando proyectos:', error);
-        showNotification('Error cargando proyectos desde Supabase', 'error');
+        console.error('Error inesperado cargando proyectos:', error);
         loadProjectsFromLocalStorage();
     }
 }
@@ -187,7 +221,7 @@ function loadProjectsFromLocalStorage() {
         saveProjects();
     }
     
-    console.log(`📦 Cargados ${projects.length} proyectos desde localStorage`);
+    console.log(`📦 ${projects.length} proyectos cargados desde localStorage`);
 }
 
 async function saveProject(projectData) {
@@ -214,18 +248,25 @@ async function saveProject(projectData) {
 
 async function saveProjectToSupabase(project) {
     try {
-        const { error } = await supabaseClient
+        const { data, error } = await supabaseClient
             .from('projects')
-            .insert([project]);
+            .insert([project])
+            .select();
         
-        if (error) throw error;
+        if (error) {
+            console.error('Error guardando proyecto:', error);
+            showNotification('Error guardando en Supabase, usando localStorage', 'warning');
+            projects.push(project);
+            saveProjects();
+            return;
+        }
         
-        projects.push(project);
+        projects.push(data[0]);
+        saveConfig('portfolioProjects', projects);
         console.log('✅ Proyecto guardado en Supabase');
         
     } catch (error) {
-        console.error('Error guardando proyecto:', error);
-        showNotification('Error guardando en Supabase, usando localStorage', 'warning');
+        console.error('Error inesperado guardando:', error);
         projects.push(project);
         saveProjects();
     }
@@ -259,14 +300,19 @@ async function deleteProjectFromSupabase(id) {
             .delete()
             .eq('id', id);
         
-        if (error) throw error;
+        if (error) {
+            console.error('Error eliminando proyecto:', error);
+            showNotification('Error eliminando de Supabase', 'error');
+            return;
+        }
         
         projects = projects.filter(p => p.id !== id);
+        saveConfig('portfolioProjects', projects);
         console.log('✅ Proyecto eliminado de Supabase');
         
     } catch (error) {
-        console.error('Error eliminando proyecto:', error);
-        showNotification('Error eliminando de Supabase', 'error');
+        console.error('Error inesperado eliminando:', error);
+        showNotification('Error inesperado eliminando proyecto', 'error');
     }
 }
 
@@ -327,8 +373,8 @@ function initProjectForm() {
         // Validaciones
         if (!validateRequired(projectData.title, 'Título') ||
             !validateRequired(projectData.description, 'Descripción') ||
-            !validateUrl(projectData.link, 'URL del proyecto') ||
-            !validateUrl(projectData.github, 'URL de GitHub')) {
+            !validateUrl(projectData.link) ||
+            !validateUrl(projectData.github)) {
             return;
         }
         
@@ -402,7 +448,7 @@ async function processImageFile(file) {
     try {
         selectedImageBase64 = await fileToBase64(file);
         showImagePreview(selectedImageBase64, file.name);
-        showNotification('Imagen cargada correctamente', 'success');
+        showNotification('Imagen cargada correctamente', 'success', 2000);
     } catch (error) {
         console.error('Error procesando imagen:', error);
         showNotification('Error al cargar la imagen', 'error');
@@ -427,7 +473,8 @@ function removeImage(event) {
     event.stopPropagation();
     clearImagePreview();
     selectedImageBase64 = null;
-    document.getElementById('projectImage').value = '';
+    const fileInput = document.getElementById('projectImage');
+    if (fileInput) fileInput.value = '';
 }
 
 function clearImagePreview() {
@@ -455,7 +502,7 @@ function initTechTags() {
                 techStack.push(tech);
                 updateTechDisplay();
                 techInput.value = '';
-                showNotification(`Tecnología "${tech}" agregada`, 'success', 2000);
+                showNotification(`Tecnología "${tech}" agregada`, 'success', 1500);
             }
         }
     });
@@ -476,7 +523,7 @@ function updateTechDisplay() {
 function removeTech(tech) {
     techStack = techStack.filter(t => t !== tech);
     updateTechDisplay();
-    showNotification(`Tecnología "${tech}" eliminada`, 'info', 2000);
+    showNotification(`Tecnología "${tech}" eliminada`, 'info', 1500);
 }
 
 // ===============================
@@ -507,6 +554,15 @@ function saveConfiguration() {
     }
     
     showNotification('Configuración guardada correctamente', 'success');
+}
+
+function loadSavedConfiguration() {
+    const config = loadConfig('portfolioConfig', {});
+    
+    // Cargar valores guardados
+    if (config.name) document.getElementById('portfolioName').value = config.name;
+    if (config.email) document.getElementById('portfolioEmail').value = config.email;
+    if (config.phone) document.getElementById('portfolioPhone').value = config.phone;
 }
 
 // ===============================
@@ -581,11 +637,31 @@ function updateStats() {
     if (totalProjects) {
         totalProjects.textContent = projects.length;
     }
+}
+
+// ===============================
+// FUNCIÓN DE TEST MEJORADA
+// ===============================
+async function testConnection() {
+    console.log('🧪 Probando conexión...');
     
-    // Actualizar también en el portfolio principal
-    const projectCount = document.getElementById('projectCount');
-    if (projectCount) {
-        projectCount.textContent = projects.length;
+    updateConnectionStatus('connecting');
+    showLoader();
+    
+    try {
+        const success = await testSupabaseConnection();
+        
+        if (success) {
+            await loadProjectsFromSupabase();
+            renderProjects();
+            updateStats();
+        }
+        
+    } catch (error) {
+        console.error('Error en test:', error);
+        showNotification('Error inesperado en el test', 'error');
+    } finally {
+        hideLoader();
     }
 }
 
@@ -602,23 +678,4 @@ window.loadProjects = loadProjects;
 // ===============================
 // AUTO-INICIALIZACIÓN
 // ===============================
-document.addEventListener('DOMContentLoaded', initAdmin); LÓGICA ESPECÍFICA DEL ADMIN
-// ===============================
-
-// Variables globales del admin
-let projects = [];
-let techStack = [];
-let selectedImageBase64 = null;
-let supabaseClient = null;
-
-// Configuración de inactividad
-const INACTIVITY_CONFIG = {
-    timeout: 10000, // 10 segundos
-    warningTime: 5000 // 5 segundos antes del logout
-};
-
-let inactivityTimer;
-let warningTimer;
-
-// ===============================
-//
+document.addEventListener('DOMContentLoaded', initAdmin);
