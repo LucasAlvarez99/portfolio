@@ -1,8 +1,28 @@
 // ===============================
-// LÓGICA ESPECÍFICA DEL PORTFOLIO - CON SUPABASE
+// CONFIGURACIÓN DE EMAILJS
 // ===============================
+const EMAILJS_CONFIG = {
+    serviceID: 'service_2thylwz',      // Ej: 'service_abc123xyz'
+    templateID: 'template_n2tlb2b',    // Ej: 'template_xyz789abc'
+    userID: 'CR6rKM8xVNBO7QF41'          // Ej: 'user_def456ghi'
+};
 
-// Variables globales
+// Inicializar EmailJS
+function initEmailJS() {
+    if (typeof emailjs === 'undefined') {
+        console.error('❌ EmailJS no está cargado');
+        return false;
+    }
+    
+    try {
+        emailjs.init(EMAILJS_CONFIG.userID);
+        console.log('✅ EmailJS inicializado correctamente');
+        return true;
+    } catch (error) {
+        console.error('❌ Error inicializando EmailJS:', error);
+        return false;
+    }
+}
 let projects = [];
 let supabaseClient = null;
 let typingConfig = {
@@ -523,11 +543,14 @@ function animateSkillBar(skillCard) {
 }
 
 // ===============================
-// FORMULARIO DE CONTACTO
+// FORMULARIO DE CONTACTO CON EMAILJS
 // ===============================
 function initContactForm() {
     const contactForm = document.getElementById('contactForm');
     if (!contactForm) return;
+    
+    // Inicializar EmailJS
+    const emailJSReady = initEmailJS();
     
     contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -546,17 +569,92 @@ function initContactForm() {
         submitButton.disabled = true;
         
         try {
-            await sendEmail(formData);
-            showNotification('¡Mensaje enviado correctamente! Te contactaré pronto.', 'success');
-            contactForm.reset();
+            if (emailJSReady) {
+                await sendEmailWithEmailJS(formData);
+                showNotification('✅ ¡Mensaje enviado correctamente! Te contactaré pronto.', 'success', 5000);
+                contactForm.reset();
+            } else {
+                showNotification('⚠️ EmailJS no está configurado. Configura tus credenciales.', 'warning', 5000);
+            }
         } catch (error) {
             console.error('Error al enviar email:', error);
-            showNotification('Error al enviar el mensaje. Por favor, intenta de nuevo.', 'error');
+            let errorMessage = 'Error al enviar el mensaje. ';
+            
+            if (error.text && error.text.includes('Invalid')) {
+                errorMessage += 'Verifica la configuración de EmailJS.';
+            } else if (error.text && error.text.includes('limit')) {
+                errorMessage += 'Se alcanzó el límite de emails. Intenta más tarde.';
+            } else {
+                errorMessage += 'Por favor, intenta de nuevo.';
+            }
+            
+            showNotification(errorMessage, 'error', 8000);
         } finally {
             submitButton.innerHTML = originalText;
             submitButton.disabled = false;
         }
     });
+}
+
+// Enviar email usando EmailJS
+async function sendEmailWithEmailJS(formData) {
+    console.log('📧 Enviando email con EmailJS...');
+    
+    const templateParams = {
+        from_name: formData.get('name'),
+        from_email: formData.get('email'),
+        subject: formData.get('subject'),
+        message: formData.get('message'),
+        to_email: 'lucas.alvarez.bernardez.99@gmail.com',
+        sent_date: new Date().toLocaleDateString('es-ES'),
+        sent_time: new Date().toLocaleTimeString('es-ES'),
+        reply_to: formData.get('email')
+    };
+    
+    console.log('📤 Enviando con datos:', {
+        nombre: templateParams.from_name,
+        email: templateParams.from_email
+    });
+    
+    const response = await emailjs.send(
+        EMAILJS_CONFIG.serviceID,
+        EMAILJS_CONFIG.templateID,
+        templateParams
+    );
+    
+    if (response.status === 200) {
+        console.log('✅ Email enviado exitosamente');
+        
+        // Guardar en Supabase también (opcional)
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            saveContactToSupabase(templateParams);
+        }
+        
+        return true;
+    } else {
+        throw new Error('Email no enviado: ' + response.text);
+    }
+}
+
+// Guardar contacto en Supabase (opcional)
+async function saveContactToSupabase(data) {
+    try {
+        const { error } = await supabaseClient
+            .from('contact_messages')
+            .insert([{
+                name: data.from_name,
+                email: data.from_email,
+                subject: data.subject,
+                message: data.message,
+                created_at: new Date().toISOString()
+            }]);
+        
+        if (!error) {
+            console.log('✅ Contacto guardado en Supabase');
+        }
+    } catch (error) {
+        console.log('⚠️ No se pudo guardar en Supabase:', error);
+    }
 }
 
 function validateContactForm(formData) {
@@ -590,23 +688,33 @@ function validateContactForm(formData) {
 }
 
 async function sendEmail(formData) {
-    // Aquí irá la integración con EmailJS
-    const templateParams = {
-        from_name: formData.get('name'),
-        from_email: formData.get('email'),
-        subject: formData.get('subject'),
-        message: formData.get('message'),
-        to_email: 'lucas.alvarez.bernardez.99@gmail.com'
-    };
-    
-    // Por ahora, simulación
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            console.log('Email enviado (simulación):', templateParams);
-            resolve();
-        }, 2000);
-    });
+    // Esta función ahora apunta a sendEmailWithEmailJS
+    return sendEmailWithEmailJS(formData);
 }
+
+// Función de prueba para EmailJS
+function testEmailFunction() {
+    console.log('🧪 Probando EmailJS...');
+    
+    const testFormData = new FormData();
+    testFormData.append('name', 'Usuario de Prueba');
+    testFormData.append('email', 'test@example.com');
+    testFormData.append('subject', 'Mensaje de prueba');
+    testFormData.append('message', 'Este es un mensaje de prueba desde la consola del navegador.');
+    
+    sendEmailWithEmailJS(testFormData)
+        .then(() => {
+            console.log('✅ Test de EmailJS exitoso');
+            alert('✅ Email de prueba enviado. Revisa tu bandeja de entrada.');
+        })
+        .catch((error) => {
+            console.error('❌ Test de EmailJS falló:', error);
+            alert('❌ Error al enviar email de prueba. Revisa la consola.');
+        });
+}
+
+// Exportar función de test
+window.testEmailFunction = testEmailFunction;
 
 // ===============================
 // EFECTOS DE HEADER
@@ -678,34 +786,144 @@ function createParticle() {
 // BOTÓN DESCARGA CV
 // ===============================
 function initCVDownload() {
-    const cvButton = document.querySelector('.cv-download-btn');
-    if (!cvButton) return;
+    const cvButton = document.getElementById('cvDownloadBtn');
+    if (!cvButton) {
+        console.log('⚠️ Botón de CV no encontrado');
+        return;
+    }
     
-    cvButton.addEventListener('click', function(e) {
-        // Agregar efecto visual
-        this.classList.add('downloading');
-        
+    console.log('📄 Inicializando botón de descarga de CV');
+    
+    // Verificar si el archivo existe
+    checkCVFile();
+    
+    // Agregar pulso inicial para llamar la atención
+    setTimeout(() => {
+        cvButton.classList.add('pulse');
         setTimeout(() => {
-            this.classList.remove('downloading');
-            this.classList.add('downloaded');
-            
-            if (typeof showNotification !== 'undefined') {
-                showNotification('CV descargado correctamente', 'success', 3000);
-            }
-            
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'download', {
-                    'event_category': 'CV',
-                    'event_label': 'CV Download'
-                });
-            }
-            
-            setTimeout(() => {
-                this.classList.remove('downloaded');
-            }, 3000);
-        }, 500);
+            cvButton.classList.remove('pulse');
+        }, 6000); // Pulsar por 6 segundos
+    }, 2000);
+    
+    // Evento de clic
+    cvButton.addEventListener('click', function(e) {
+        handleCVDownload(this);
     });
 }
+
+// Verificar si el archivo CV existe
+async function checkCVFile() {
+    const cvButton = document.getElementById('cvDownloadBtn');
+    if (!cvButton) return;
+    
+    const cvPath = './assets/CV_Lucas_Alvarez.pdf';
+    
+    try {
+        const response = await fetch(cvPath, { method: 'HEAD' });
+        
+        if (response.ok) {
+            console.log('✅ Archivo CV encontrado');
+            cvButton.style.opacity = '1';
+        } else {
+            console.warn('⚠️ Archivo CV no encontrado en:', cvPath);
+            cvButton.style.opacity = '0.6';
+            cvButton.title = 'CV no disponible - Archivo no encontrado';
+            cvButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                showNotification('⚠️ El archivo CV no está disponible. Por favor, súbelo a: ./assets/CV-Lucas-Alvarez.pdf', 'warning', 5000);
+            }, { once: true });
+        }
+    } catch (error) {
+        console.warn('⚠️ No se pudo verificar el archivo CV:', error);
+        // Dejar que intente descargar de todas formas
+    }
+}
+
+// Manejar la descarga del CV
+function handleCVDownload(button) {
+    console.log('📥 Descargando CV...');
+    
+    // Agregar clase de descarga
+    button.classList.add('downloading');
+    
+    // Cambiar icono temporalmente
+    const icon = button.querySelector('i');
+    const originalIconClass = icon.className;
+    icon.className = 'fas fa-spinner fa-spin';
+    
+    // Simular proceso de descarga
+    setTimeout(() => {
+        // Quitar estado de descarga
+        button.classList.remove('downloading');
+        button.classList.add('downloaded');
+        
+        // Restaurar icono y agregar check
+        icon.className = originalIconClass;
+        
+        // Mostrar notificación
+        if (typeof showNotification !== 'undefined') {
+            showNotification('✅ CV descargado correctamente', 'success', 3000);
+        }
+        
+        // Analytics si está disponible
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'download', {
+                'event_category': 'CV',
+                'event_label': 'CV Download',
+                'value': 1
+            });
+        }
+        
+        // Guardar estadística en Supabase si está disponible
+        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+            saveDownloadAnalytics();
+        }
+        
+        // Remover estado después de 3 segundos
+        setTimeout(() => {
+            button.classList.remove('downloaded');
+        }, 3000);
+        
+        console.log('✅ CV descargado');
+        
+    }, 800); // Simular tiempo de descarga
+}
+
+// Guardar analítica de descarga en Supabase
+async function saveDownloadAnalytics() {
+    try {
+        const { data, error } = await supabaseClient
+            .from('analytics')
+            .insert([{
+                event_type: 'cv_download',
+                event_data: {
+                    timestamp: new Date().toISOString(),
+                    user_agent: navigator.userAgent.substring(0, 100)
+                }
+            }]);
+        
+        if (error) {
+            console.log('⚠️ No se pudo guardar analytics:', error.message);
+        } else {
+            console.log('📊 Analytics de descarga guardado');
+        }
+    } catch (error) {
+        console.log('⚠️ Error guardando analytics:', error);
+    }
+}
+
+// Función para actualizar el CV dinámicamente desde el admin
+function updateCVPath(newPath) {
+    const cvButton = document.getElementById('cvDownloadBtn');
+    if (cvButton) {
+        cvButton.href = newPath;
+        console.log('✅ Ruta del CV actualizada a:', newPath);
+        checkCVFile();
+    }
+}
+
+// Exportar funciones
+window.updateCVPath = updateCVPath;
 
 // Función throttle
 function throttle(func, limit) {
