@@ -133,13 +133,92 @@ function loadPortfolioData() {
 }
 
 // ===============================
-// GESTIÓN DE PROYECTOS
+// INICIALIZAR SUPABASE EN EL PORTFOLIO
 // ===============================
-function loadProjects() {
-    projects = loadConfig('portfolioProjects', []);
+function initSupabase() {
+    console.log('🔌 Inicializando conexión a Supabase...');
     
-    // Proyectos por defecto si no hay ninguno
-    if (projects.length === 0) {
+    // Credenciales de Supabase
+    const SUPABASE_URL = 'https://gacaofljolawsefbelgc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhY2FvZmxqb2xhd3NlZmJlbGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3NTQyMjMsImV4cCI6MjA3NDMzMDIyM30.3X0NA-_cRqVQSbu-cp1Ge4ToMbAVO2QqNr-yAPOZBho';
+    
+    try {
+        // Verificar que Supabase esté cargado
+        if (typeof supabase === 'undefined') {
+            console.error('❌ Librería de Supabase no cargada');
+            console.log('💡 Usando proyectos por defecto...');
+            return false;
+        }
+        
+        // Crear cliente
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Cliente Supabase inicializado');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error inicializando Supabase:', error);
+        return false;
+    }
+}
+
+// ===============================
+// CARGAR PROYECTOS DESDE SUPABASE
+// ===============================
+async function loadProjectsFromSupabase() {
+    console.log('📦 Cargando proyectos desde Supabase...');
+    
+    // Si no hay cliente Supabase, usar proyectos por defecto
+    if (!supabaseClient) {
+        console.log('⚠️ No hay conexión a Supabase, usando proyectos por defecto');
+        loadDefaultProjects();
+        return;
+    }
+    
+    try {
+        // Obtener proyectos desde Supabase
+        const { data, error } = await supabaseClient
+            .from('projects')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('❌ Error cargando proyectos:', error);
+            console.log('💡 Usando proyectos por defecto...');
+            loadDefaultProjects();
+            return;
+        }
+        
+        if (data && data.length > 0) {
+            projects = data;
+            console.log(`✅ ${projects.length} proyectos cargados desde Supabase`);
+            
+            // Guardar en localStorage SOLO como respaldo
+            saveConfig('portfolioProjects', projects);
+        } else {
+            console.log('⚠️ No hay proyectos en Supabase, usando por defecto');
+            loadDefaultProjects();
+        }
+        
+        // Renderizar proyectos
+        renderProjects();
+        updateProjectCount();
+        
+    } catch (error) {
+        console.error('❌ Error inesperado:', error);
+        loadDefaultProjects();
+    }
+}
+
+// Función para cargar proyectos por defecto
+function loadDefaultProjects() {
+    // Intentar cargar desde localStorage primero
+    const savedProjects = loadConfig('portfolioProjects', []);
+    
+    if (savedProjects.length > 0) {
+        projects = savedProjects;
+        console.log(`📦 ${projects.length} proyectos cargados desde localStorage`);
+    } else {
+        // Si no hay nada, usar proyectos de demostración
         projects = [
             {
                 id: 1,
@@ -169,21 +248,81 @@ function loadProjects() {
                 technologies: ["React", "D3.js", "Express", "PostgreSQL"]
             }
         ];
+        console.log('📦 3 proyectos de demostración cargados');
     }
     
     renderProjects();
     updateProjectCount();
-    
-    console.log(`📦 ${projects.length} proyectos cargados`);
 }
 
-function renderProjects() {
-    const container = document.getElementById('projectsGrid');
-    if (!container) return;}
+// ===============================
+// CARGA DE DATOS DINÁMICOS
+// ===============================
+function loadPortfolioData() {
+    const config = loadConfig('portfolioConfig', {});
     
+    // Aplicar nombre
+    if (config.name) {
+        document.querySelectorAll('.logo, h1').forEach(element => {
+            if (element.textContent && element.textContent.includes('Lucas Alvarez')) {
+                element.textContent = element.textContent.replace('Lucas Alvarez', config.name);
+            }
+        });
+    }
+    
+    // Aplicar título/cargo
+    if (config.title) {
+        document.querySelectorAll('.subtitle').forEach(element => {
+            if (element.textContent && element.textContent.includes('Desarrollador Web')) {
+                element.textContent = config.title;
+            }
+        });
+    }
+    
+    // Aplicar información de contacto
+    if (config.email) {
+        document.querySelectorAll('a[href^="mailto:"]').forEach(link => {
+            link.href = `mailto:${config.email}`;
+            const span = link.querySelector('span');
+            if (span) span.textContent = config.email;
+        });
+    }
+    
+    if (config.phone) {
+        document.querySelectorAll('a[href^="tel:"]').forEach(link => {
+            link.href = `tel:${config.phone}`;
+            const span = link.querySelector('span');
+            if (span) span.textContent = config.phone;
+        });
+    }
+    
+    if (config.location) {
+        document.querySelectorAll('.contact-item').forEach(item => {
+            const icon = item.querySelector('i.fa-map-marker-alt');
+            if (icon) {
+                const span = item.querySelector('span');
+                if (span) span.textContent = config.location;
+            }
+        });
+    }
+    
+    console.log('📄 Datos del portfolio cargados');
+}
+
+// ===============================
+// RENDERIZAR PROYECTOS
+// ===============================
 function renderProjects() {
     const container = document.getElementById('projectsGrid');
-    if (!container) return;
+    if (!container) {
+        console.error('❌ Contenedor projectsGrid no encontrado');
+        return;
+    }
+    
+    if (projects.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay proyectos para mostrar.</p>';
+        return;
+    }
     
     container.innerHTML = projects.map(project => `
         <div class="project-card zoom-in" onclick="openProjectModal(${project.id})">
@@ -213,6 +352,8 @@ function renderProjects() {
             </div>
         </div>
     `).join('');
+    
+    console.log(`✅ ${projects.length} proyectos renderizados`);
 }
 
 function updateProjectCount() {
