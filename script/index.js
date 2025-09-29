@@ -230,22 +230,41 @@ function loadPortfolioData() {
 // ===============================
 // RENDERIZAR PROYECTOS
 // ===============================
+// ===============================
+// RENDERIZAR PROYECTOS - VERSIÓN FIJA
+// ===============================
 function renderProjects() {
+    console.log('🎨 Renderizando proyectos...', projects.length);
+    
     const container = document.getElementById('projectsGrid');
     if (!container) {
         console.error('❌ Contenedor projectsGrid no encontrado');
         return;
     }
     
+    console.log('✅ Contenedor encontrado');
+    
     if (projects.length === 0) {
+        console.log('⚠️ No hay proyectos para mostrar');
         container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay proyectos para mostrar.</p>';
         return;
     }
     
-    container.innerHTML = projects.map(project => `
-        <div class="project-card zoom-in" onclick="openProjectModal(${project.id})">
+    console.log('📦 Renderizando', projects.length, 'proyectos');
+    
+    // Limpiar contenedor completamente
+    container.innerHTML = '';
+    
+    // Agregar cada proyecto
+    projects.forEach(project => {
+        const projectCard = document.createElement('div');
+        projectCard.className = 'project-card zoom-in visible'; // Agregar 'visible' directamente
+        projectCard.style.opacity = '1'; // Forzar visibilidad
+        projectCard.style.transform = 'scale(1)'; // Forzar transformación
+        
+        projectCard.innerHTML = `
             <div class="project-image">
-                <img src="${project.image}" alt="${project.title} Preview" loading="lazy" />
+                <img src="${project.image}" alt="${project.title} Preview" loading="lazy" onerror="this.src='https://via.placeholder.com/400x200?text=Imagen+No+Disponible'" />
                 <div class="project-overlay">
                     <div class="overlay-content">
                         <h4>Vista Previa</h4>
@@ -257,7 +276,7 @@ function renderProjects() {
                 <h3 class="project-title">${project.title}</h3>
                 <p class="project-description">${project.description}</p>
                 <div class="project-tech">
-                    ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+                    ${(project.technologies || []).map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
                 </div>
                 <div class="project-buttons">
                     <a href="${project.link}" class="btn btn-primary" target="_blank" onclick="event.stopPropagation()">
@@ -268,10 +287,27 @@ function renderProjects() {
                     </a>
                 </div>
             </div>
-        </div>
-    `).join('');
+        `;
+        
+        // Agregar evento de clic
+        projectCard.addEventListener('click', () => openProjectModal(project.id));
+        
+        // Agregar al contenedor
+        container.appendChild(projectCard);
+    });
     
-    console.log(`✅ ${projects.length} proyectos renderizados`);
+    console.log('✅', projects.length, 'proyectos renderizados correctamente');
+    
+    // Forzar que sean visibles después de un frame
+    requestAnimationFrame(() => {
+        const allCards = container.querySelectorAll('.project-card');
+        allCards.forEach(card => {
+            card.style.opacity = '1';
+            card.style.visibility = 'visible';
+            card.style.display = 'block';
+        });
+        console.log('✅ Visibilidad forzada en', allCards.length, 'tarjetas');
+    });
 }
 
 function updateProjectCount() {
@@ -441,9 +477,12 @@ function typeAnimation() {
 }
 
 // ===============================
-// ANIMACIONES AL SCROLL
+// ANIMACIONES AL SCROLL - VERSIÓN FIJA
 // ===============================
 function initScrollAnimations() {
+    // NO aplicar animaciones a las project-card inicialmente
+    // Ya están visibles por defecto
+    
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -452,7 +491,10 @@ function initScrollAnimations() {
     const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
             if (entry.isIntersecting) {
-                entry.target.classList.add('visible');
+                // NO sobrescribir la visibilidad de project-card
+                if (!entry.target.classList.contains('project-card')) {
+                    entry.target.classList.add('visible');
+                }
                 
                 // Animación especial para barras de habilidades
                 if (entry.target.classList.contains('skill-card')) {
@@ -462,10 +504,12 @@ function initScrollAnimations() {
         });
     }, observerOptions);
     
-    // Observar elementos con animaciones
-    document.querySelectorAll('.fade-in, .slide-up, .zoom-in').forEach(el => {
+    // Observar solo elementos que NO son project-card
+    document.querySelectorAll('.fade-in:not(.project-card), .slide-up:not(.project-card), .zoom-in:not(.project-card)').forEach(el => {
         observer.observe(el);
     });
+    
+    console.log('✅ Animaciones de scroll inicializadas (excluyendo proyectos)');
 }
 
 function animateSkillBar(skillCard) {
