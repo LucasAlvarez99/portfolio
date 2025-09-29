@@ -257,7 +257,47 @@ function loadPortfolioData() {
 // ===============================
 // GESTIÓN DE PROYECTOS
 // ===============================
-
+function loadProjects() {
+    projects = loadConfig('portfolioProjects', []);
+    
+    // Proyectos por defecto si no hay ninguno
+    if (projects.length === 0) {
+        projects = [
+            {
+                id: 1,
+                title: "E-Commerce App",
+                description: "Aplicación de comercio electrónico completa con carrito de compras, sistema de pagos y panel de administración.",
+                image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop",
+                link: "https://ecommerce-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/ecommerce-app",
+                technologies: ["React", "Node.js", "MongoDB", "Stripe"]
+            },
+            {
+                id: 2,
+                title: "Task Manager",
+                description: "Gestor de tareas colaborativo con funciones de equipo, calendario integrado y notificaciones en tiempo real.",
+                image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=200&fit=crop",
+                link: "https://taskmanager-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/task-manager",
+                technologies: ["Vue.js", "Firebase", "Tailwind"]
+            },
+            {
+                id: 3,
+                title: "Dashboard Analytics",
+                description: "Dashboard interactivo para análisis de datos con gráficos dinámicos y reportes automatizados.",
+                image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
+                link: "https://dashboard-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/dashboard-analytics",
+                technologies: ["React", "D3.js", "Express", "PostgreSQL"]
+            }
+        ];
+    }
+    
+    renderProjects();
+    updateProjectCount();
+    
+    console.log(`📦 ${projects.length} proyectos cargados`);
+}
 
 function renderProjects() {
     const container = document.getElementById('projectsGrid');
