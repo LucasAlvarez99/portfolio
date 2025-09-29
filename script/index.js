@@ -1,9 +1,10 @@
 // ===============================
-// LÓGICA ESPECÍFICA DEL PORTFOLIO
+// LÓGICA ESPECÍFICA DEL PORTFOLIO - CON SUPABASE
 // ===============================
 
 // Variables globales
 let projects = [];
+let supabaseClient = null;
 let typingConfig = {
     phrases: [
         "Creando experiencias web únicas",
@@ -28,9 +29,14 @@ let typingSpeed = typingConfig.typingSpeed;
 function initPortfolio() {
     console.log('🚀 Inicializando portfolio...');
     
+    // Inicializar Supabase primero
+    initSupabase();
+    
     // Cargar datos dinámicos
     loadPortfolioData();
-    loadProjects();
+    
+    // Cargar proyectos desde Supabase
+    loadProjectsFromSupabase();
     
     // Inicializar componentes
     initTypingAnimation();
@@ -39,8 +45,132 @@ function initPortfolio() {
     initProjectModal();
     initHeaderScrollEffect();
     initParticleEffect();
+    initCVDownload();
     
     console.log('✅ Portfolio inicializado correctamente');
+}
+
+// ===============================
+// INICIALIZAR SUPABASE EN EL PORTFOLIO
+// ===============================
+function initSupabase() {
+    console.log('🔌 Inicializando conexión a Supabase...');
+    
+    // Credenciales de Supabase
+    const SUPABASE_URL = 'https://gacaofljolawsefbelgc.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhY2FvZmxqb2xhd3NlZmJlbGdjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTg3NTQyMjMsImV4cCI6MjA3NDMzMDIyM30.3X0NA-_cRqVQSbu-cp1Ge4ToMbAVO2QqNr-yAPOZBho';
+    
+    try {
+        // Verificar que Supabase esté cargado
+        if (typeof supabase === 'undefined') {
+            console.error('❌ Librería de Supabase no cargada');
+            console.log('💡 Usando proyectos por defecto...');
+            return false;
+        }
+        
+        // Crear cliente
+        supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        console.log('✅ Cliente Supabase inicializado');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Error inicializando Supabase:', error);
+        return false;
+    }
+}
+
+// ===============================
+// CARGAR PROYECTOS DESDE SUPABASE
+// ===============================
+async function loadProjectsFromSupabase() {
+    console.log('📦 Cargando proyectos desde Supabase...');
+    
+    // Si no hay cliente Supabase, usar proyectos por defecto
+    if (!supabaseClient) {
+        console.log('⚠️ No hay conexión a Supabase, usando proyectos por defecto');
+        loadDefaultProjects();
+        return;
+    }
+    
+    try {
+        // Obtener proyectos desde Supabase
+        const { data, error } = await supabaseClient
+            .from('projects')
+            .select('*')
+            .order('created_at', { ascending: false });
+        
+        if (error) {
+            console.error('❌ Error cargando proyectos:', error);
+            console.log('💡 Usando proyectos por defecto...');
+            loadDefaultProjects();
+            return;
+        }
+        
+        if (data && data.length > 0) {
+            projects = data;
+            console.log(`✅ ${projects.length} proyectos cargados desde Supabase`);
+            
+            // Guardar en localStorage SOLO como respaldo
+            saveConfig('portfolioProjects', projects);
+        } else {
+            console.log('⚠️ No hay proyectos en Supabase, usando por defecto');
+            loadDefaultProjects();
+        }
+        
+        // Renderizar proyectos
+        renderProjects();
+        updateProjectCount();
+        
+    } catch (error) {
+        console.error('❌ Error inesperado:', error);
+        loadDefaultProjects();
+    }
+}
+
+// Función para cargar proyectos por defecto
+function loadDefaultProjects() {
+    // Intentar cargar desde localStorage primero
+    const savedProjects = loadConfig('portfolioProjects', []);
+    
+    if (savedProjects.length > 0) {
+        projects = savedProjects;
+        console.log(`📦 ${projects.length} proyectos cargados desde localStorage`);
+    } else {
+        // Si no hay nada, usar proyectos de demostración
+        projects = [
+            {
+                id: 1,
+                title: "E-Commerce App",
+                description: "Aplicación de comercio electrónico completa con carrito de compras, sistema de pagos y panel de administración.",
+                image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop",
+                link: "https://ecommerce-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/ecommerce-app",
+                technologies: ["React", "Node.js", "MongoDB", "Stripe"]
+            },
+            {
+                id: 2,
+                title: "Task Manager",
+                description: "Gestor de tareas colaborativo con funciones de equipo, calendario integrado y notificaciones en tiempo real.",
+                image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=200&fit=crop",
+                link: "https://taskmanager-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/task-manager",
+                technologies: ["Vue.js", "Firebase", "Tailwind"]
+            },
+            {
+                id: 3,
+                title: "Dashboard Analytics",
+                description: "Dashboard interactivo para análisis de datos con gráficos dinámicos y reportes automatizados.",
+                image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
+                link: "https://dashboard-demo.vercel.app",
+                github: "https://github.com/lucasalvarez/dashboard-analytics",
+                technologies: ["React", "D3.js", "Express", "PostgreSQL"]
+            }
+        ];
+        console.log('📦 3 proyectos de demostración cargados');
+    }
+    
+    renderProjects();
+    updateProjectCount();
 }
 
 // ===============================
@@ -94,94 +224,23 @@ function loadPortfolioData() {
         });
     }
     
-    // Aplicar textos de "Sobre mí"
-    if (config.aboutText1 || config.aboutText2 || config.aboutText3) {
-        const aboutTextElements = document.querySelectorAll('.about-text p');
-        if (config.aboutText1 && aboutTextElements[0]) {
-            aboutTextElements[0].textContent = config.aboutText1;
-        }
-        if (config.aboutText2 && aboutTextElements[1]) {
-            aboutTextElements[1].textContent = config.aboutText2;
-        }
-        if (config.aboutText3 && aboutTextElements[2]) {
-            aboutTextElements[2].textContent = config.aboutText3;
-        }
-    }
-    
-    // Aplicar estadísticas
-    const statItems = document.querySelectorAll('.stat-item h3');
-    if (config.statProjects && statItems[0]) {
-        statItems[0].textContent = config.statProjects;
-    }
-    if (config.statExperience && statItems[1]) {
-        statItems[1].textContent = config.statExperience + '+';
-    }
-    if (config.statSatisfaction && statItems[2]) {
-        statItems[2].textContent = config.statSatisfaction + '%';
-    }
-    
-    // Aplicar imagen de perfil
-    if (config.profileImage) {
-        document.querySelectorAll('.about-image img').forEach(img => {
-            img.src = config.profileImage;
-        });
-    }
-    
     console.log('📄 Datos del portfolio cargados');
 }
 
 // ===============================
-// GESTIÓN DE PROYECTOS
+// RENDERIZAR PROYECTOS
 // ===============================
-function loadProjects() {
-    projects = loadConfig('portfolioProjects', []);
-    
-    // Proyectos por defecto si no hay ninguno
-    if (projects.length === 0) {
-        projects = [
-            {
-                id: 1,
-                title: "E-Commerce App",
-                description: "Aplicación de comercio electrónico completa con carrito de compras, sistema de pagos y panel de administración.",
-                image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=400&h=200&fit=crop",
-                link: "https://ecommerce-demo.vercel.app",
-                github: "https://github.com/lucasalvarez/ecommerce-app",
-                technologies: ["React", "Node.js", "MongoDB", "Stripe"]
-            },
-            {
-                id: 2,
-                title: "Task Manager",
-                description: "Gestor de tareas colaborativo con funciones de equipo, calendario integrado y notificaciones en tiempo real.",
-                image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?w=400&h=200&fit=crop",
-                link: "https://taskmanager-demo.vercel.app",
-                github: "https://github.com/lucasalvarez/task-manager",
-                technologies: ["Vue.js", "Firebase", "Tailwind"]
-            },
-            {
-                id: 3,
-                title: "Dashboard Analytics",
-                description: "Dashboard interactivo para análisis de datos con gráficos dinámicos y reportes automatizados.",
-                image: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=200&fit=crop",
-                link: "https://dashboard-demo.vercel.app",
-                github: "https://github.com/lucasalvarez/dashboard-analytics",
-                technologies: ["React", "D3.js", "Express", "PostgreSQL"]
-            }
-        ];
+function renderProjects() {
+    const container = document.getElementById('projectsGrid');
+    if (!container) {
+        console.error('❌ Contenedor projectsGrid no encontrado');
+        return;
     }
     
-    renderProjects();
-    updateProjectCount();
-    
-    console.log(`📦 ${projects.length} proyectos cargados`);
-}
-
-function renderProjects() {
-    const container = document.getElementById('projectsGrid');
-    if (!container) return;}
-    
-function renderProjects() {
-    const container = document.getElementById('projectsGrid');
-    if (!container) return;
+    if (projects.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 2rem;">No hay proyectos para mostrar.</p>';
+        return;
+    }
     
     container.innerHTML = projects.map(project => `
         <div class="project-card zoom-in" onclick="openProjectModal(${project.id})">
@@ -211,6 +270,8 @@ function renderProjects() {
             </div>
         </div>
     `).join('');
+    
+    console.log(`✅ ${projects.length} proyectos renderizados`);
 }
 
 function updateProjectCount() {
@@ -418,133 +479,14 @@ function animateSkillBar(skillCard) {
 }
 
 // ===============================
-// CONFIGURACIÓN DE EMAILJS PARA PORTFOLIO
+// FORMULARIO DE CONTACTO
 // ===============================
-
-// Configuración de EmailJS (reemplaza con tus credenciales reales)
-const EMAILJS_CONFIG = {
-    serviceID: 'service_2thylwz',
-    templateID: 'template_n2tlb2b', 
-    userID: 'CR6rKM8xVNBO7QF41'
-};
-
-// Inicializar EmailJS cuando se carga la página
-function initEmailJS() {
-    // Verificar si EmailJS está cargado
-    if (typeof emailjs === 'undefined') {
-        console.error('❌ EmailJS no está cargado');
-        return false;
-    }
-    
-    // Inicializar EmailJS con tu User ID
-    emailjs.init(EMAILJS_CONFIG.userID);
-    console.log('✅ EmailJS inicializado correctamente');
-    return true;
-}
-
-// Función mejorada para enviar email
-async function sendContactEmail(formData) {
-    console.log('📧 Enviando email de contacto...');
-    
-    try {
-        // Preparar los datos del template
-        const templateParams = {
-            from_name: formData.get('name'),
-            from_email: formData.get('email'),
-            subject: formData.get('subject'),
-            message: formData.get('message'),
-            to_email: 'lucas.alvarez.bernardez.99@gmail.com',
-            reply_to: formData.get('email'),
-            // Datos adicionales
-            sent_date: new Date().toLocaleDateString('es-ES'),
-            sent_time: new Date().toLocaleTimeString('es-ES'),
-            user_agent: navigator.userAgent.substring(0, 100)
-        };
-        
-        console.log('📤 Enviando con datos:', {
-            nombre: templateParams.from_name,
-            email: templateParams.from_email,
-            asunto: templateParams.subject
-        });
-        
-        // Enviar email usando EmailJS
-        const response = await emailjs.send(
-            EMAILJS_CONFIG.serviceID,
-            EMAILJS_CONFIG.templateID,
-            templateParams
-        );
-        
-        if (response.status === 200) {
-            console.log('✅ Email enviado exitosamente:', response);
-            
-            // También guardar en Supabase si está disponible
-            if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-                await saveContactMessageToSupabase(templateParams);
-            }
-            
-            return true;
-        } else {
-            throw new Error('Email no enviado: ' + response.text);
-        }
-        
-    } catch (error) {
-        console.error('❌ Error enviando email:', error);
-        
-        // Si EmailJS falla, al menos guardar en Supabase/localStorage
-        if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-            await saveContactMessageToSupabase({
-                from_name: formData.get('name'),
-                from_email: formData.get('email'),
-                subject: formData.get('subject'),
-                message: formData.get('message')
-            });
-            console.log('💾 Mensaje guardado en Supabase como respaldo');
-        }
-        
-        throw error;
-    }
-}
-
-// Función para guardar mensaje en Supabase
-async function saveContactMessageToSupabase(messageData) {
-    try {
-        const { data, error } = await supabaseClient
-            .from('contact_messages')
-            .insert([{
-                name: messageData.from_name,
-                email: messageData.from_email,
-                subject: messageData.subject,
-                message: messageData.message,
-                created_at: new Date().toISOString()
-            }]);
-        
-        if (error) {
-            console.error('Error guardando mensaje en Supabase:', error);
-            return false;
-        }
-        
-        console.log('✅ Mensaje guardado en Supabase');
-        return true;
-    } catch (error) {
-        console.error('Error inesperado guardando mensaje:', error);
-        return false;
-    }
-}
-
-// Función mejorada para manejar el formulario de contacto
 function initContactForm() {
     const contactForm = document.getElementById('contactForm');
-    if (!contactForm) {
-        console.error('❌ Formulario de contacto no encontrado');
-        return;
-    }
-    
-    // Inicializar EmailJS
-    const emailJSReady = initEmailJS();
+    if (!contactForm) return;
     
     contactForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log('📝 Formulario de contacto enviado');
         
         const formData = new FormData(contactForm);
         const submitButton = contactForm.querySelector('button[type="submit"]');
@@ -560,85 +502,41 @@ function initContactForm() {
         submitButton.disabled = true;
         
         try {
-            if (emailJSReady) {
-                // Intentar enviar por EmailJS
-                await sendContactEmail(formData);
-                showNotification('✅ ¡Mensaje enviado correctamente! Te contactaré pronto.', 'success', 5000);
-            } else {
-                // Fallback: solo guardar en Supabase
-                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
-                    await saveContactMessageToSupabase({
-                        from_name: formData.get('name'),
-                        from_email: formData.get('email'),
-                        subject: formData.get('subject'),
-                        message: formData.get('message')
-                    });
-                    showNotification('✅ Mensaje guardado correctamente. Te contactaré pronto.', 'success', 5000);
-                } else {
-                    showNotification('⚠️ Mensaje procesado. Te contactaré pronto.', 'warning', 5000);
-                }
-            }
-            
-            // Limpiar formulario
+            await sendEmail(formData);
+            showNotification('¡Mensaje enviado correctamente! Te contactaré pronto.', 'success');
             contactForm.reset();
-            
-            // Analytics (si está disponible)
-            if (typeof gtag !== 'undefined') {
-                gtag('event', 'contact_form_submit', {
-                    'event_category': 'Contact',
-                    'event_label': 'Form Submit Success'
-                });
-            }
-            
         } catch (error) {
-            console.error('❌ Error al enviar mensaje:', error);
-            
-            let errorMessage = 'Error al enviar el mensaje. ';
-            if (error.text && error.text.includes('Invalid')) {
-                errorMessage += 'Verifica la configuración de EmailJS.';
-            } else if (error.text && error.text.includes('network')) {
-                errorMessage += 'Verifica tu conexión a internet.';
-            } else {
-                errorMessage += 'Por favor, intenta de nuevo o contáctame directamente.';
-            }
-            
-            showNotification(errorMessage, 'error', 8000);
-            
+            console.error('Error al enviar email:', error);
+            showNotification('Error al enviar el mensaje. Por favor, intenta de nuevo.', 'error');
         } finally {
-            // Restaurar botón
             submitButton.innerHTML = originalText;
             submitButton.disabled = false;
         }
     });
 }
 
-// Validación del formulario de contacto
 function validateContactForm(formData) {
-    const name = formData.get('name')?.trim();
-    const email = formData.get('email')?.trim();
-    const subject = formData.get('subject')?.trim();
-    const message = formData.get('message')?.trim();
+    const name = formData.get('name');
+    const email = formData.get('email');
+    const subject = formData.get('subject');
+    const message = formData.get('message');
     
-    // Validar nombre
     if (!name || name.length < 2) {
-        showNotification('Por favor ingresa tu nombre completo', 'error');
+        showNotification('El nombre debe tener al menos 2 caracteres', 'error');
         return false;
     }
     
-    // Validar email
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!email || !emailRegex.test(email)) {
-        showNotification('Por favor ingresa un email válido', 'error');
+        showNotification('Por favor, ingresa un email válido', 'error');
         return false;
     }
     
-    // Validar asunto
     if (!subject || subject.length < 3) {
         showNotification('El asunto debe tener al menos 3 caracteres', 'error');
         return false;
     }
     
-    // Validar mensaje
     if (!message || message.length < 10) {
         showNotification('El mensaje debe tener al menos 10 caracteres', 'error');
         return false;
@@ -647,34 +545,23 @@ function validateContactForm(formData) {
     return true;
 }
 
-// Función de prueba para el email
-function testEmailFunction() {
-    console.log('🧪 Probando función de email...');
+async function sendEmail(formData) {
+    // Aquí irá la integración con EmailJS
+    const templateParams = {
+        from_name: formData.get('name'),
+        from_email: formData.get('email'),
+        subject: formData.get('subject'),
+        message: formData.get('message'),
+        to_email: 'lucas.alvarez.bernardez.99@gmail.com'
+    };
     
-    const testFormData = new FormData();
-    testFormData.append('name', 'Test Usuario');
-    testFormData.append('email', 'test@example.com');
-    testFormData.append('subject', 'Prueba de Contacto');
-    testFormData.append('message', 'Este es un mensaje de prueba desde la consola.');
-    
-    sendContactEmail(testFormData)
-        .then(() => {
-            console.log('✅ Test de email exitoso');
-        })
-        .catch((error) => {
-            console.error('❌ Test de email falló:', error);
-        });
-}
-
-// Exportar funciones para uso global
-window.testEmailFunction = testEmailFunction;
-window.initContactForm = initContactForm;
-
-// Auto-inicialización cuando el DOM esté listo
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initContactForm);
-} else {
-    initContactForm();
+    // Por ahora, simulación
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            console.log('Email enviado (simulación):', templateParams);
+            resolve();
+        }, 2000);
+    });
 }
 
 // ===============================
@@ -744,13 +631,84 @@ function createParticle() {
 }
 
 // ===============================
+// BOTÓN DESCARGA CV
+// ===============================
+function initCVDownload() {
+    const cvButton = document.querySelector('.cv-download-btn');
+    if (!cvButton) return;
+    
+    cvButton.addEventListener('click', function(e) {
+        // Agregar efecto visual
+        this.classList.add('downloading');
+        
+        setTimeout(() => {
+            this.classList.remove('downloading');
+            this.classList.add('downloaded');
+            
+            if (typeof showNotification !== 'undefined') {
+                showNotification('CV descargado correctamente', 'success', 3000);
+            }
+            
+            if (typeof gtag !== 'undefined') {
+                gtag('event', 'download', {
+                    'event_category': 'CV',
+                    'event_label': 'CV Download'
+                });
+            }
+            
+            setTimeout(() => {
+                this.classList.remove('downloaded');
+            }, 3000);
+        }, 500);
+    });
+}
+
+// Función throttle
+function throttle(func, limit) {
+    let inThrottle;
+    return function() {
+        const args = arguments;
+        const context = this;
+        if (!inThrottle) {
+            func.apply(context, args);
+            inThrottle = true;
+            setTimeout(() => inThrottle = false, limit);
+        }
+    };
+}
+
+// Función de configuración
+function loadConfig(key, defaultValue = null) {
+    try {
+        const saved = localStorage.getItem(key);
+        return saved ? JSON.parse(saved) : defaultValue;
+    } catch (error) {
+        return defaultValue;
+    }
+}
+
+function saveConfig(key, value) {
+    try {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+    } catch (error) {
+        return false;
+    }
+}
+
+// ===============================
 // FUNCIONES GLOBALES PARA HTML
 // ===============================
 window.openProjectModal = openProjectModal;
 window.closeProjectModal = closeProjectModal;
 window.openFullPreview = openFullPreview;
+window.loadProjectsFromSupabase = loadProjectsFromSupabase;
 
 // ===============================
 // AUTO-INICIALIZACIÓN
 // ===============================
 document.addEventListener('DOMContentLoaded', initPortfolio);
+
+// Información de debug
+console.log('🛠️ INDEX.JS CARGADO');
+console.log('📋 Para recargar proyectos: loadProjectsFromSupabase()');
